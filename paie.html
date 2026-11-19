@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="icon" href="assets/logo.jpg"><link rel="apple-touch-icon" href="assets/logo.jpg">
+<title>Paie · El Wakil Immobilier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script><script src="assets/tw.js"></script>
+<link rel="stylesheet" href="assets/app.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="assets/data.js"></script><script src="assets/app.js"></script>
+</head>
+<body>
+<div id="page">
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-3"><h1 class="text-2xl font-semibold tracking-tight text-slate-900">Paie</h1><span id="status"></span></div>
+      <p class="text-sm text-slate-500 mt-1">Salaires calculés automatiquement à partir des rendez-vous, missions et règles de l'agence.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <select id="month" class="field !w-auto font-medium"></select>
+      <button id="export" class="btn btn-secondary"><i data-lucide="download"></i> Exporter</button>
+      <button id="validate" data-perm="paie.validate" class="btn btn-primary"><i data-lucide="badge-check"></i> Valider la paie</button>
+    </div>
+  </div>
+
+  <div id="kpis" class="mt-6 grid grid-cols-2 xl:grid-cols-4 gap-4"></div>
+
+  <div class="card mt-6 overflow-hidden">
+    <div class="px-5 pt-4 border-b border-slate-100 flex items-center gap-6 overflow-x-auto whitespace-nowrap" id="tabs">
+      <button data-t="com" class="pb-3 text-sm font-medium border-b-2 border-brand-600 text-slate-900">Commerciaux <span class="ml-1 text-xs text-slate-400" id="nCom"></span></button>
+      <button data-t="ter" class="pb-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800">Équipe terrain <span class="ml-1 text-xs text-slate-400" id="nTer"></span></button>
+    </div>
+    <div class="overflow-x-auto thin-scroll"><table class="tbl m-stack" id="tbl"></table></div>
+  </div>
+
+  <p class="mt-4 text-xs text-slate-500 flex items-center gap-1.5"><i data-lucide="info" class="w-3.5 h-3.5"></i> Les montants se mettent à jour automatiquement quand un RDV ou une mission est ajouté, tant que la paie n'est pas validée.</p>
+</div>
+
+<script>
+WK.mount({ id: 'paie', title: 'Paie', section: 'Finance', perm: 'paie.view', help: 'paie' }, () => {
+  const { $, $$, fmt, can, agentStats, fieldStats, settings, store, sum, avatar, badge, icon, openPanel, closePanel, panelHead, toast, audit, exportCSV, months, CUR_MONTH, missionTotal } = WK;
+  $('#month').innerHTML = months().slice().reverse().map(m => `<option value="${m}">${fmt.month(m)}</option>`).join('');
+  let tab = 'com';
+  const status = m => (store.get('paie.status', {})[m]) || (m < CUR_MONTH ? 'Payée' : 'Brouillon');
+
+  function data(m) {
+    const s = settings();
+    const com = agentStats(m).filter(a => a.actif || a.rdv).map(a => ({ nom: a.nom, poste: a.type === 'interne' ? 'Commercial(e) interne' : 'Agent WhatsApp', fixe: a.type === 'interne' ? a.base : 0, rdv: a.rdv,
+      primes: a.rdv * s.primeRdv, bonus: a.type === 'whatsapp' ? a.rdv * s.bonusWhatsapp : 0, net: a.salaire, lignes: [
+        ['Salaire de base', a.type === 'interne' ? a.base : 0], [`Primes RDV (${a.rdv} × ${fmt.n(s.primeRdv)})`, a.rdv * s.primeRdv], ...(a.type === 'whatsapp' ? [[`Bonus WhatsApp (${a.rdv} × ${fmt.n(s.bonusWhatsapp)})`, a.rdv * s.bonusWhatsapp]] : [])] }))
+      .filter(a => a.net > 0);
+    const ter = fieldStats(m).filter(a => a.actif || a.rdv).map(a => { const v = a.missions.filter(x => x.statut === 'Validée'); return { nom: a.nom, poste: a.poste, fixe: a.base, rdv: a.rdv, missions: v.length, attente: a.missions.length - v.length, frais: a.fraisValides, net: a.net,
+      lignes: [['Salaire de base', a.base], ...v.map(x => [`Mission ${x.destination} (${fmt.dateShort(x.date)})`, missionTotal(x)])] }; }).filter(a => a.actif !== false && a.fixe);
+    return { com, ter };
+  }
+
+  function render() {
+    const m = $('#month').value, { com, ter } = data(m), st = status(m);
+    $('#status').innerHTML = st === 'Payée' ? badge('Payée', 'green', 'check') : st === 'Validée' ? badge('Validée', 'blue', 'badge-check') : badge('Brouillon', 'amber', 'pencil');
+    $('#validate') && ($('#validate').disabled = st !== 'Brouillon', $('#validate').classList.toggle('opacity-50', st !== 'Brouillon'));
+    const tc = sum(com, 'net'), tt = sum(ter, 'net');
+    const k = (l, v, sub, ic) => `<div class="card px-5 py-4"><div class="flex items-center gap-2 text-xs font-medium text-slate-500">${icon(ic, 'w-4 h-4')}${l}</div><p class="mt-2 text-xl font-semibold tnum text-slate-900">${v}</p><p class="text-xs text-slate-400 mt-0.5">${sub}</p></div>`;
+    $('#kpis').innerHTML = [
+      k('Masse salariale', fmt.money(tc + tt), `${com.length + ter.length} salariés`, 'wallet'),
+      k('Commerciaux', fmt.money(tc), `${com.length} personnes · ${sum(com, 'rdv')} RDV`, 'briefcase'),
+      k('Équipe terrain', fmt.money(tt), `${ter.length} photographes`, 'camera'),
+      k('Frais de mission', fmt.money(sum(ter, 'frais')), `${sum(ter, 'attente')} mission(s) en attente de validation`, 'map-pinned'),
+    ].join('');
+    $('#nCom').textContent = com.length; $('#nTer').textContent = ter.length;
+    const L = tab === 'com' ? com : ter;
+    $('#tbl').innerHTML = (tab === 'com'
+      ? `<thead><tr><th>Salarié</th><th class="num">Fixe</th><th class="num">RDV</th><th class="num">Primes RDV</th><th class="num">Bonus WhatsApp</th><th class="num">Net à payer</th><th></th></tr></thead>`
+      : `<thead><tr><th>Salarié</th><th class="num">Salaire de base</th><th class="num">Visites</th><th class="num">Missions validées</th><th class="num">Frais</th><th class="num">Net à payer</th><th></th></tr></thead>`) +
+      `<tbody>${L.map((a, i) => `<tr><td><div class="flex items-center gap-2.5">${avatar(a.nom, 'w-8 h-8 text-xs')}<div><p class="font-medium text-slate-800">${a.nom}</p><p class="text-2xs text-slate-500">${a.poste}</p></div></div></td>
+        ${tab === 'com' ? `<td class="num">${a.fixe ? fmt.n(a.fixe) : '—'}</td><td class="num">${a.rdv}</td><td class="num">${fmt.n(a.primes)}</td><td class="num">${a.bonus ? fmt.n(a.bonus) : '—'}</td>`
+          : `<td class="num">${fmt.n(a.fixe)}</td><td class="num">${a.rdv}</td><td class="num">${a.missions}${a.attente ? ` <span class="text-2xs text-amber-700">+${a.attente} en attente</span>` : ''}</td><td class="num">${a.frais ? fmt.n(a.frais) : '—'}</td>`}
+        <td class="num font-semibold text-slate-900">${fmt.da(a.net)}</td>
+        <td class="text-right"><button data-i="${i}" class="btn btn-ghost !py-1 !px-2 !text-xs !text-brand-800">${icon('file-text', 'w-3.5 h-3.5')} Fiche</button></td></tr>`).join('')}</tbody>
+      <tfoot><tr class="bg-slate-50 font-semibold"><td class="px-4 py-3">Total</td><td colspan="4"></td><td class="num px-4 py-3">${fmt.da(sum(L, 'net'))}</td><td></td></tr></tfoot>`;
+    $$('[data-i]').forEach(b => b.onclick = () => slip(L[+b.dataset.i], m));
+    WK.refreshIcons();
+  }
+
+  function slip(a, m) {
+    const p = openPanel(`<div id="slip" class="p-8">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3"><img src="assets/logo.jpg" alt="" class="logo-img w-11 h-11"><div><p class="font-semibold">${settings().agence}</p><p class="text-xs text-slate-500">Fiche de paie</p></div></div>
+        <div class="text-right"><p class="text-xs text-slate-500">Période</p><p class="font-semibold">${fmt.month(m)}</p></div>
+      </div>
+      <div class="mt-8 rounded-xl bg-slate-50 p-4 flex items-center gap-3">${avatar(a.nom, 'w-10 h-10 text-sm')}<div><p class="font-semibold">${a.nom}</p><p class="text-xs text-slate-500">${a.poste}</p></div><div class="ml-auto text-right"><p class="text-xs text-slate-500">Rendez-vous</p><p class="font-semibold tnum">${a.rdv}</p></div></div>
+      <table class="w-full mt-6 text-sm"><thead><tr class="text-xs text-slate-500 border-b border-slate-200"><th class="text-left font-medium pb-2">Libellé</th><th class="text-right font-medium pb-2">Montant</th></tr></thead>
+        <tbody>${a.lignes.map(([l, v]) => `<tr class="border-b border-slate-100"><td class="py-2.5 text-slate-700">${l}</td><td class="py-2.5 text-right tnum">${fmt.da(v)}</td></tr>`).join('')}</tbody>
+        <tfoot><tr><td class="pt-4 font-semibold">Net à payer</td><td class="pt-4 text-right text-lg font-semibold tnum">${fmt.da(a.net)}</td></tr></tfoot></table>
+      <div class="mt-10 grid grid-cols-2 gap-6 text-xs text-slate-500"><div class="border-t border-dashed border-slate-300 pt-2">Signature de l'employeur</div><div class="border-t border-dashed border-slate-300 pt-2">Signature du salarié</div></div>
+      <div class="mt-8 flex justify-end gap-2 no-print"><button data-close class="btn btn-secondary">Fermer</button><button onclick="window.print()" class="btn btn-primary">${icon('printer')} Imprimer / PDF</button></div>
+    </div>`, { kind: 'modal', width: '600px' });
+  }
+
+  $('#tabs').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; tab = b.dataset.t; $$('#tabs button').forEach(x => { const on = x === b; x.classList.toggle('border-brand-600', on); x.classList.toggle('text-slate-900', on); x.classList.toggle('border-transparent', !on); x.classList.toggle('text-slate-500', !on); }); render(); };
+  $('#month').onchange = render;
+  $('#export').onclick = () => { const m = $('#month').value, { com, ter } = data(m); exportCSV(`paie-${m}.csv`, [['Salarié', 'Poste', 'Fixe', 'RDV', 'Net à payer'], ...com.concat(ter).map(a => [a.nom, a.poste, a.fixe, a.rdv, a.net])]); };
+  $('#validate') && ($('#validate').onclick = () => {
+    const m = $('#month').value, { com, ter } = data(m);
+    const p = openPanel(`<div class="p-6"><span class="w-11 h-11 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center">${icon('badge-check', 'w-5 h-5')}</span>
+      <h3 class="mt-4 text-lg font-semibold">Valider la paie de ${fmt.month(m).toLowerCase()} ?</h3>
+      <p class="mt-2 text-sm text-slate-600">Les montants seront figés : <b>${com.length + ter.length} salariés</b> pour un total de <b>${fmt.da(sum(com, 'net') + sum(ter, 'net'))}</b>. Cette action sera enregistrée dans le journal d'activité.</p>
+      <div class="mt-6 flex justify-end gap-2"><button data-close class="btn btn-secondary">Annuler</button><button id="ok" class="btn btn-primary">Valider</button></div></div>`, { kind: 'modal', width: '440px' });
+    $('#ok', p).onclick = () => { const st = store.get('paie.status', {}); st[m] = 'Validée'; store.set('paie.status', st); audit('Paie', `Paie de ${fmt.month(m)} validée`); closePanel(); render(); toast('Paie validée et figée'); };
+  });
+  $('#month').value = CUR_MONTH;
+  render();
+});
+</script>
+</body>
+</html>

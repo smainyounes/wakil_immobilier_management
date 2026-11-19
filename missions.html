@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="icon" href="assets/logo.jpg"><link rel="apple-touch-icon" href="assets/logo.jpg">
+<title>Équipe terrain · El Wakil Immobilier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script><script src="assets/tw.js"></script>
+<link rel="stylesheet" href="assets/app.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="assets/data.js"></script><script src="assets/app.js"></script>
+</head>
+<body>
+<div id="page">
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Équipe terrain</h1>
+      <p class="text-sm text-slate-500 mt-1">Photographes, missions hors wilaya, frais et planning de repos.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <select id="month" class="field !w-auto font-medium"></select>
+      <button id="declare" data-perm="missions.manage" class="btn btn-primary hidden sm:inline-flex"><i data-lucide="plus"></i> Déclarer une mission</button>
+    </div>
+  </div>
+
+  <div id="cards" class="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"></div>
+
+  <div id="pending" class="mt-6"></div>
+
+  <div class="mt-6 grid grid-cols-1 gap-4">
+    <div class="card overflow-hidden">
+      <div class="px-5 pt-5 pb-3 flex flex-wrap items-center justify-between gap-3"><div><h3 class="font-semibold text-slate-900">Missions hors wilaya</h3><p class="text-sm text-slate-500" id="mSub"></p></div>
+        <div class="seg" id="mSeg"><button data-v="all" class="on">Toutes</button><button data-v="À valider">À valider</button><button data-v="Validée">Validées</button></div></div>
+      <div id="mCards" class="m-only divide-y divide-slate-100"></div>
+      <div class="d-only overflow-x-auto thin-scroll"><table class="tbl"><thead><tr><th>Date</th><th>Photographe</th><th>Destination</th><th>Type</th><th class="num">Repas</th><th class="num">Frais</th><th class="num">Hôtel</th><th class="num">Total</th><th>Statut</th><th></th></tr></thead><tbody id="mRows"></tbody></table></div>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center justify-between"><h3 class="font-semibold text-slate-900">Barème des frais</h3><a href="parametres.html#frais" data-perm="settings.manage" class="text-xs font-medium text-brand-700 hover:underline">Modifier</a></div>
+      <p class="text-sm text-slate-500">Appliqué automatiquement</p>
+      <ul id="bareme" class="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-1"></ul>
+    </div>
+  </div>
+
+  <div class="card mt-6 p-5">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2"><div><h3 class="font-semibold text-slate-900">Planning hebdomadaire</h3><p class="text-sm text-slate-500">Jours de travail et de repos de chaque photographe<span data-perm="missions.manage"> · cliquez sur une case pour la modifier</span></p></div>
+      <div class="flex items-center gap-4 text-xs text-slate-600"><span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-night-900"></span>Travail</span><span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-slate-200"></span>Repos</span></div></div>
+    <div class="mt-5 overflow-x-auto"><table class="w-full text-sm" id="planning"></table></div>
+  </div>
+</div>
+
+<script>
+WK.mount({ id: 'missions', title: 'Équipe terrain', section: 'Opérations', perm: 'missions.view', help: 'missions' }, () => {
+  const { $, $$, fmt, can, fieldStats, missions, missionTotal, settings, team, store, avatar, badge, icon, esc, toast, openPanel, closePanel, panelHead, audit, months, CUR_MONTH, TODAY } = WK;
+  const fin = can('finance.view'), manage = can('missions.manage');
+  const sel = $('#month');
+  sel.innerHTML = months().slice().reverse().map(m => `<option value="${m}">${fmt.month(m)}</option>`).join('');
+  let filter = 'all';
+  const DAYS = ['Samedi', 'Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+
+  function saveMission(m) {
+    const list = store.get('missions', WK.SEED_MISSIONS).slice();
+    const i = list.findIndex(x => x.id === m.id);
+    if (i >= 0) list[i] = m; else list.push(m);
+    store.set('missions', list);
+  }
+
+  const keyOf = x => x.id.startsWith('auto-') ? 'v-' + x.agent + x.date : x.id;
+  const paieClosed = m => { const st = store.get('paie.status', {})[m]; return st === 'Validée' || st === 'Payée' || (!st && m < WK.CUR_MONTH); };
+  const canFees = can('missions.editFees');
+
+  function render() {
+    const m = sel.value, F = fieldStats(m), M = missions(m), s = settings();
+    $('#cards').innerHTML = F.filter(a => a.actif).map(a => `
+      <div class="card p-5">
+        <div class="flex items-center gap-3">${avatar(a.nom, 'w-11 h-11 text-sm')}<div class="min-w-0"><p class="font-semibold text-slate-900">${a.nom}</p><p class="text-xs text-slate-500 truncate">${a.poste}</p></div>
+          ${a.missions.some(x => x.statut === 'À valider') ? `<span class="ml-auto">${badge(a.missions.filter(x => x.statut === 'À valider').length + ' à valider', 'amber')}</span>` : ''}</div>
+        <div class="mt-5 grid grid-cols-2 gap-3">
+          <div class="rounded-lg bg-slate-50 p-3"><p class="text-xs text-slate-500">Visites</p><p class="text-xl font-semibold tnum text-slate-900">${a.rdv}</p></div>
+          <div class="rounded-lg bg-slate-50 p-3"><p class="text-xs text-slate-500">Missions</p><p class="text-xl font-semibold tnum text-slate-900">${a.missions.length}</p></div>
+        </div>
+        <div class="mt-4 flex items-center justify-between text-sm"><span class="text-slate-500">Frais validés</span><span class="font-semibold tnum text-slate-900">${fmt.da(a.fraisValides)}</span></div>
+        ${fin ? `<div class="mt-1.5 flex items-center justify-between text-sm"><span class="text-slate-500">Salaire net estimé</span><span class="font-semibold tnum text-slate-900">${fmt.da(a.net)}</span></div>` : ''}
+        <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-1">${(a.repos || []).map(d => `<span class="text-2xs rounded bg-slate-100 text-slate-600 px-1.5 py-0.5">Repos ${d.slice(0, 3).toLowerCase()}.</span>`).join('')}</div>
+      </div>`).join('');
+
+    const pend = M.filter(x => x.statut === 'À valider');
+    $('#pending').innerHTML = pend.length ? `
+      <div class="rounded-xl border border-brand-200 bg-gradient-to-r from-brand-50 to-white p-4 flex flex-col md:flex-row md:items-center gap-4">
+        <span class="w-10 h-10 rounded-lg bg-brand-100 text-brand-800 flex items-center justify-center shrink-0">${icon('radar', 'w-5 h-5')}</span>
+        <div class="flex-1"><p class="text-sm font-semibold text-brand-900">${pend.length} mission${pend.length > 1 ? 's' : ''} détectée${pend.length > 1 ? 's' : ''} automatiquement</p>
+        <p class="text-sm text-brand-900/70 mt-0.5">Des rendez-vous ont eu lieu hors des wilayas de base (${s.wilayasBase.join(', ')}). Les frais sont pré-calculés selon le barème. Il reste à les valider.</p></div>
+        ${manage ? `<button id="validAll" class="btn btn-primary shrink-0">${icon('check-check')} Tout valider (${fmt.da(pend.reduce((a, x) => a + missionTotal(x), 0))})</button>` : ''}
+      </div>` : '';
+    $('#validAll') && ($('#validAll').onclick = () => { pend.forEach(x => saveMission({ ...x, id: keyOf(x), statut: 'Validée' })); audit('Validation', `${pend.length} missions validées`); toast(pend.length + ' missions validées · paie mise à jour'); render(); });
+
+    const L = M.filter(x => filter === 'all' || x.statut === filter);
+    $('#mSub').textContent = `${M.length} missions · ${fmt.da(M.reduce((a, x) => a + missionTotal(x), 0))} de frais`;
+    $('#mRows').innerHTML = L.map(x => `
+      <tr><td class="whitespace-nowrap"><p class="font-medium text-slate-800">${fmt.dateShort(x.date)}</p><p class="text-xs text-slate-500">${fmt.weekday(x.date)}</p></td>
+      <td><div class="flex items-center gap-2 whitespace-nowrap">${avatar(x.agent)}${x.agent}</div></td>
+      <td><p class="font-medium text-slate-800">${esc(x.destination)}</p>${x.rdvs ? `<p class="text-xs text-slate-500 truncate max-w-[200px]" title="${esc(x.rdvs.join(', '))}">${esc(x.rdvs.join(', '))}</p>` : ''}</td>
+      <td class="whitespace-nowrap">${x.type === 'nuitee' ? badge('Nuitée', 'violet', 'moon') : badge('Journée', 'gray', 'sun')}</td>
+      <td class="num">${fmt.n(x.repas)}</td><td class="num">${fmt.n(x.frais)}</td><td class="num">${x.hotel ? fmt.n(x.hotel) : '—'}</td>
+      <td class="num"><p class="font-semibold text-slate-900">${fmt.n(missionTotal(x))}</p>${x.ajuste ? `<p class="text-2xs text-brand-800 whitespace-nowrap" title="${esc(x.motif || '')} — ${esc(x.ajustePar || '')}">${icon('pencil-line', 'w-3 h-3 inline -mt-0.5')} Ajusté <span class="text-slate-400 line-through">${fmt.n(x.original.repas + x.original.frais + x.original.hotel)}</span></p>` : ''}</td>
+      <td class="whitespace-nowrap">${x.statut === 'Validée' ? badge('Validée', 'green', 'check') : badge('À valider', 'amber', 'clock')}${x.source === 'Détectée' ? `<span class="ml-1 text-2xs text-slate-400">auto</span>` : ''}</td>
+      <td class="text-right whitespace-nowrap"><div class="inline-flex items-center gap-1">${canFees ? (paieClosed(m) ? `<span class="p-1.5 text-slate-300" title="Paie du mois clôturée : frais non modifiables">${icon('lock', 'w-4 h-4')}</span>` : `<button data-fee="${x.id}" class="btn btn-ghost !p-1.5" title="Modifier les frais de cette mission">${icon('pencil', 'w-4 h-4')}</button>`) : ''}${manage && x.statut !== 'Validée' ? `<button data-ok="${x.id}" class="btn btn-secondary !py-1 !px-2 !text-xs">Valider</button>` : ''}</div></td></tr>`).join('') || `<tr><td colspan="10" class="text-center py-10 text-slate-500">Aucune mission</td></tr>`;
+    $('#mCards').innerHTML = L.map(x => `
+      <div class="px-4 py-3.5">
+        <div class="flex items-start gap-3">
+          ${avatar(x.agent, 'w-10 h-10 text-xs')}
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-3"><p class="font-medium text-slate-900 truncate">${esc(x.destination)}</p><p class="text-base font-semibold tnum text-slate-900 shrink-0">${fmt.da(missionTotal(x))}</p></div>
+            <p class="text-xs text-slate-500 mt-0.5">${x.agent} · ${fmt.weekday(x.date)} ${fmt.dateShort(x.date)} · ${x.type === 'nuitee' ? 'Nuitée' : 'Journée'}</p>
+            <p class="text-xs text-slate-500 mt-1 tnum">Repas ${fmt.n(x.repas)} · Frais ${fmt.n(x.frais)}${x.hotel ? ' · Hôtel ' + fmt.n(x.hotel) : ''}</p>
+            ${x.ajuste ? `<p class="text-2xs text-brand-800 mt-1">${icon('pencil-line', 'w-3 h-3 inline -mt-0.5')} Ajusté : ${esc(x.motif || '')}</p>` : ''}
+            <div class="mt-2.5 flex items-center gap-2">${x.statut === 'Validée' ? badge('Validée', 'green', 'check') : badge('À valider', 'amber', 'clock')}
+              <span class="ml-auto flex items-center gap-2">${canFees && !paieClosed(m) ? `<button data-fee="${x.id}" class="btn btn-secondary !py-1.5 !px-3 !min-h-0 !text-sm">${icon('pencil', 'w-4 h-4')} Frais</button>` : ''}${manage && x.statut !== 'Validée' ? `<button data-ok="${x.id}" class="btn btn-primary !py-1.5 !px-3 !min-h-0 !text-sm">Valider</button>` : ''}</span></div>
+          </div>
+        </div>
+      </div>`).join('') || '<div class="py-10 text-center text-sm text-slate-500">Aucune mission</div>';
+    $$('[data-fee]').forEach(b => b.onclick = () => editFees(M.find(y => y.id === b.dataset.fee)));
+    $$('[data-ok]').forEach(b => b.onclick = () => { const x = M.find(y => y.id === b.dataset.ok); saveMission({ ...x, id: keyOf(x), statut: 'Validée' }); audit('Validation', `Mission ${x.agent} → ${x.destination}`); toast('Mission validée'); render(); });
+
+    $('#bareme').innerHTML = [
+      ['moon', 'Nuitée hors wilaya', s.fraisNuitee, '/ jour'], ['sun', 'Aller-retour même jour', s.fraisJournee, '/ jour'], ['utensils', 'Repas', s.repas, ''],
+      ['bed-double', 'Hôtel', s.hotel, '/ nuit'], ['calendar-plus', 'Travail pendant congé', s.conge, '/ jour'], ['zap', '5ᵉ rendez-vous dans la journée', s.bonus5rdv, '/ jour'],
+      ['user-x', 'Absence', -s.absence, '/ jour'],
+    ].map(([ic, l, v, u]) => `<li class="flex items-center gap-3 py-2.5 border-b border-slate-100"><span class="w-8 h-8 rounded-lg bg-slate-50 ring-1 ring-slate-200 text-slate-500 flex items-center justify-center">${icon(ic)}</span><span class="flex-1 text-sm text-slate-700">${l}</span><span class="text-sm font-semibold tnum ${v < 0 ? 'text-red-600' : 'text-slate-900'}">${v < 0 ? '−' : ''}${fmt.n(Math.abs(v))} DA <span class="font-normal text-slate-400 text-xs">${u}</span></span></li>`).join('');
+
+    const T = team().terrain.filter(a => a.actif);
+    $('#planning').innerHTML = `<thead><tr><th class="text-left text-xs font-medium text-slate-500 pb-3 w-48">Photographe</th>${DAYS.map(d => `<th class="text-xs font-medium text-slate-500 pb-3">${d}</th>`).join('')}<th class="text-xs font-medium text-slate-500 pb-3 text-right">Jours / sem.</th></tr></thead>
+      <tbody>${T.map(a => `<tr><td class="py-1.5"><div class="flex flex-wrap items-center gap-2">${avatar(a.nom)}<span class="font-medium text-slate-800">${a.nom}</span></div></td>
+        ${DAYS.map(d => { const off = (a.repos || []).includes(d); return `<td class="p-1"><button ${manage ? '' : 'disabled'} data-a="${a.nom}" data-d="${d}" class="w-full h-10 rounded-lg text-xs font-medium transition ${off ? 'bg-slate-100 text-slate-400 hover:bg-slate-200' : 'bg-night-900 text-brand-300 hover:bg-night-800'} ${manage ? '' : 'cursor-default'}">${off ? 'Repos' : 'Travail'}</button></td>`; }).join('')}
+        <td class="text-right font-semibold tnum text-slate-900 pr-1">${7 - (a.repos || []).length}</td></tr>`).join('')}</tbody>`;
+    WK.refreshIcons();
+  }
+
+  function editFees(x) {
+    const s = settings();
+    const bar = { frais: x.type === 'nuitee' ? s.fraisNuitee : s.fraisJournee, repasU: s.repas, hotelU: s.hotel };
+    const orig = x.original || { repas: x.repas, frais: x.frais, hotel: x.hotel || 0 };
+    const field = (name, label, val, hint) => `<div><label class="label">${label}</label><div class="relative"><input name="${name}" type="number" min="0" step="100" value="${val}" class="field pr-12 tnum text-right"><span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">DA</span></div><p class="text-2xs text-slate-500 mt-1">${hint}</p></div>`;
+    const p = openPanel(`<div class="p-6">
+      <div class="flex items-start justify-between gap-4"><div><h3 class="text-lg font-semibold text-slate-900">Modifier les frais de la mission</h3>
+        <p class="text-sm text-slate-500 mt-1 flex items-start gap-2">${avatar(x.agent, 'w-5 h-5 text-[9px] mt-px')}<span class="min-w-0">${x.agent} · ${esc(x.destination)} · ${fmt.weekday(x.date)} ${fmt.date(x.date)}</span></p></div>
+        <button data-close class="btn btn-ghost !p-1.5">${icon('x', 'w-5 h-5')}</button></div>
+      <div class="mt-4 rounded-lg bg-slate-50 ring-1 ring-slate-200 p-3 text-xs text-slate-600 flex gap-2">${icon('info', 'w-4 h-4 text-slate-400 shrink-0')}<span>Ce changement concerne <b>uniquement cette mission</b>. Le barème général (Paramètres) n'est pas modifié.</span></div>
+      <form id="ff" class="mt-5 space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          ${field('repas', 'Repas', x.repas, `Barème : ${fmt.n(bar.repasU)} DA / repas`)}
+          ${field('frais', x.type === 'nuitee' ? 'Frais de nuitée' : 'Frais de journée', x.frais, `Barème : ${fmt.n(bar.frais)} DA / jour`)}
+          ${field('hotel', 'Hôtel', x.hotel || 0, `Barème : ${fmt.n(bar.hotelU)} DA / nuit`)}
+        </div>
+        <div><label class="label">Motif de l'ajustement <span class="text-red-500">*</span></label><input name="motif" class="field" value="${esc(x.motif || '')}" placeholder="Ex. hôtel plus cher sur place, 2 nuits au lieu d'une…"><p class="err hidden text-xs text-red-600 mt-1">Le motif est obligatoire quand les montants changent.</p></div>
+        <div class="rounded-xl bg-night-900 text-white p-4 flex items-center justify-between gap-4">
+          <div><p class="text-xs text-slate-400">Nouveau total</p><p id="nt" class="text-2xl font-semibold tnum"></p></div>
+          <div class="text-right"><p class="text-xs text-slate-400">Avant ajustement</p><p class="text-sm tnum text-slate-300">${fmt.da(orig.repas + orig.frais + orig.hotel)}</p><p id="diff" class="text-xs font-medium tnum mt-0.5"></p></div>
+        </div>
+      </form>
+      <div class="mt-6 flex flex-wrap items-center justify-between gap-2">
+        <button id="resetFees" class="btn btn-ghost !px-2 text-sm">${icon('rotate-ccw')} Revenir aux montants d'origine</button>
+        <div class="flex gap-2"><button data-close class="btn btn-secondary">Annuler</button><button id="saveFees" class="btn btn-primary">${icon('check')} Enregistrer</button></div>
+      </div></div>`, { kind: 'modal', width: '600px' });
+    const f = $('#ff', p);
+    const vals = () => ({ repas: +f.repas.value || 0, frais: +f.frais.value || 0, hotel: +f.hotel.value || 0 });
+    const upd = () => {
+      const v = vals(), t = v.repas + v.frais + v.hotel, d = t - (orig.repas + orig.frais + orig.hotel);
+      $('#nt', p).textContent = fmt.da(t);
+      $('#diff', p).textContent = d ? (d > 0 ? '+' : '−') + fmt.da(Math.abs(d)) : 'Inchangé';
+      $('#diff', p).className = 'text-xs font-medium tnum mt-0.5 ' + (d > 0 ? 'text-brand-300' : d < 0 ? 'text-emerald-300' : 'text-slate-400');
+    };
+    f.oninput = upd; upd();
+    f.motif.addEventListener('input', () => { f.motif.classList.toggle('!border-red-400', false); $('.err', p).classList.toggle('hidden', true); });
+    $('#resetFees', p).onclick = () => { f.repas.value = orig.repas; f.frais.value = orig.frais; f.hotel.value = orig.hotel; f.motif.value = ''; upd(); };
+    $('#saveFees', p).onclick = () => {
+      const v = vals(), changed = v.repas !== orig.repas || v.frais !== orig.frais || v.hotel !== orig.hotel, motif = f.motif.value.trim();
+      if (changed && !motif) { f.motif.classList.add('!border-red-400'); $('.err', p).classList.toggle('hidden', false); f.motif.focus(); return; }
+      const before = missionTotal(x);
+      saveMission({ ...x, ...v, id: keyOf(x), ajuste: changed, motif: changed ? motif : '', ajustePar: changed ? WK.currentUser().nom : '', original: changed ? orig : null });
+      audit('Frais ajustés', `${x.agent} → ${x.destination} (${fmt.dateShort(x.date)}) : ${fmt.da(before)} → ${fmt.da(v.repas + v.frais + v.hotel)}${changed ? ' · ' + motif : ''}`);
+      closePanel(); render(); toast(changed ? 'Frais de la mission ajustés · paie mise à jour' : 'Montants d\'origine rétablis');
+    };
+  }
+
+  $('#planning').onclick = e => {
+    const b = e.target.closest('[data-a]'); if (!b || !manage) return;
+    const T = team(); const a = T.terrain.find(x => x.nom === b.dataset.a); a.repos = a.repos || [];
+    a.repos = a.repos.includes(b.dataset.d) ? a.repos.filter(x => x !== b.dataset.d) : [...a.repos, b.dataset.d];
+    store.set('team', T); audit('Planning', `${a.nom} — ${b.dataset.d}`); render();
+  };
+  WK.seg($('#mSeg'), v => { filter = v; render(); });
+  sel.onchange = render;
+
+  $('#declare') && ($('#declare').onclick = () => {
+    const s = settings(), T = team().terrain.filter(a => a.actif);
+    const p = openPanel(`${panelHead('Déclarer une mission', 'Les frais sont calculés automatiquement selon le barème')}
+      <form id="f" class="flex-1 overflow-y-auto p-6 space-y-5">
+        <div class="grid grid-cols-2 gap-4"><div><label class="label">Photographe</label><select name="agent" class="field">${T.map(a => `<option>${a.nom}</option>`).join('')}</select></div><div><label class="label">Date</label><input type="date" name="date" class="field" value="${TODAY}"></div></div>
+        <div><label class="label">Destination</label><input name="destination" class="field" placeholder="Ex. Oran" required></div>
+        <div><label class="label">Type de mission</label><div class="grid grid-cols-2 gap-2">
+          <label class="cursor-pointer"><input type="radio" name="type" value="journee" class="peer sr-only" checked><span class="block rounded-lg border border-slate-200 p-3 peer-checked:border-brand-500 peer-checked:bg-brand-50"><span class="flex items-center gap-2 text-sm font-medium text-slate-800">${icon('sun')} Retour le jour même</span><span class="text-xs text-slate-500">${fmt.da(s.fraisJournee)} / jour</span></span></label>
+          <label class="cursor-pointer"><input type="radio" name="type" value="nuitee" class="peer sr-only"><span class="block rounded-lg border border-slate-200 p-3 peer-checked:border-brand-500 peer-checked:bg-brand-50"><span class="flex items-center gap-2 text-sm font-medium text-slate-800">${icon('moon')} Avec nuitée</span><span class="text-xs text-slate-500">${fmt.da(s.fraisNuitee)} / jour + hôtel</span></span></label></div></div>
+        <div class="grid grid-cols-2 gap-4"><div><label class="label">Nombre de repas</label><input type="number" name="repas" min="0" value="1" class="field"></div><div><label class="label">Nuits d'hôtel</label><input type="number" name="nuits" min="0" value="0" class="field"></div></div>
+        <div class="rounded-xl bg-slate-900 text-white p-4 flex items-center justify-between"><span class="text-sm text-slate-300">Total des frais</span><span id="tot" class="text-xl font-semibold tnum"></span></div>
+      </form>
+      <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2"><button data-close class="btn btn-secondary">Annuler</button><button id="save" class="btn btn-primary">${icon('check')} Enregistrer</button></div>`);
+    const f = $('#f', p);
+    const calc = () => { const d = Object.fromEntries(new FormData(f)); const o = { repas: (+d.repas || 0) * s.repas, frais: d.type === 'nuitee' ? s.fraisNuitee : s.fraisJournee, hotel: (+d.nuits || 0) * s.hotel }; $('#tot', p).textContent = fmt.da(o.repas + o.frais + o.hotel); return { ...d, ...o }; };
+    f.oninput = calc; calc();
+    $('#save', p).onclick = () => { const d = calc(); if (!d.destination.trim()) { f.destination.classList.add('!border-red-400'); return; }
+      saveMission({ id: 'u' + Date.now(), date: d.date, agent: d.agent, destination: d.destination, type: d.type, repas: d.repas, frais: d.frais, hotel: d.hotel, statut: can('paie.validate') ? 'Validée' : 'À valider', source: 'Saisie' });
+      audit('Mission', `${d.agent} → ${d.destination}`); closePanel(); sel.value = d.date.slice(0, 7); render(); toast('Mission enregistrée'); };
+  });
+  render();
+  if (new URLSearchParams(location.search).get('new') && $('#declare')) $('#declare').click();
+});
+</script>
+</body>
+</html>

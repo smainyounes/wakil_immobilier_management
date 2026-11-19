@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="icon" href="assets/logo.jpg"><link rel="apple-touch-icon" href="assets/logo.jpg">
+<title>Clients · El Wakil Immobilier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script><script src="assets/tw.js"></script>
+<link rel="stylesheet" href="assets/app.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="assets/data.js"></script><script src="assets/app.js"></script>
+<style>.kcol.drag-over{background:#fefce8;outline:2px dashed #eab308;outline-offset:-2px}.kcard.dragging{opacity:.4}</style>
+</head>
+<body>
+<div id="page">
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Clients</h1>
+      <p class="text-sm text-slate-500 mt-1" id="sub">Le fichier clients partagé de l'agence : vendeurs, acheteurs, locataires et bailleurs.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <button id="export" data-perm="crm.export" class="btn btn-secondary"><i data-lucide="download"></i> Exporter</button>
+      <button id="new" data-perm="crm.create" class="btn btn-primary hidden sm:inline-flex"><i data-lucide="user-plus"></i> Nouveau client</button>
+    </div>
+  </div>
+
+  <div id="kpis" class="mt-6 grid grid-cols-2 xl:grid-cols-4 gap-4"></div>
+
+  <div id="todo" class="mt-6"></div>
+
+  <div class="card mt-6 overflow-hidden">
+    <div class="p-4 border-b border-slate-100 flex flex-wrap items-center gap-2">
+      <div class="seg" id="scope"><button data-v="all" class="on">Toute l'agence</button><button data-v="mine">Mes clients</button></div>
+      <div class="relative flex-1 min-w-[160px]"><i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i><input id="q" class="field !pl-9" placeholder="Nom, téléphone, commune…" enterkeyhint="search"></div>
+      <button id="ftoggle" class="m-only btn btn-secondary !px-3"><i data-lucide="sliders-horizontal"></i></button>
+      <div id="filt" class="hidden sm:contents w-full grid-cols-2 gap-2">
+      <select id="fType" class="field sm:!w-auto"></select>
+      <select id="fStage" class="field sm:!w-auto"></select>
+      <select id="fSource" class="field sm:!w-auto"></select>
+      <select id="fAgent" class="field sm:!w-auto"></select>
+      </div>
+      <div class="seg" id="view"><button data-v="list" class="on" title="Liste"><i data-lucide="list" class="w-4 h-4"></i></button><button data-v="kanban" title="Pipeline"><i data-lucide="columns-3" class="w-4 h-4"></i></button></div>
+    </div>
+    <div id="body"></div>
+  </div>
+</div>
+
+<script>
+WK.mount({ id: 'crm', title: 'Clients (CRM)', section: 'Commercial', perm: 'crm.view', help: 'crm' }, () => {
+  const { $, $$, fmt, can, clients, saveClients, visibleClients, myAgent, canSeePhone, maskPhone, canMoveClient, STAGES, team, avatar, badge, icon, esc, toast, openPanel, closePanel, panelHead, audit, exportCSV, currentUser, TODAY } = WK;
+  const me = myAgent();
+  const params = new URLSearchParams(location.search);
+  let scope = me && (params.get('mine') || !can('crm.viewAll')) ? 'mine' : 'all', view = 'list', page = 1;
+  const PER = 15;
+  if (!me) $('#scope').classList.add('is-hidden');
+  if (!can('crm.viewAll')) $('#scope button[data-v=all]').classList.add('is-hidden');
+  $$('#scope button').forEach(b => b.classList.toggle('on', b.dataset.v === scope));
+  const TYPE_TONE = { Vendeur: 'blue', Acheteur: 'green', Locataire: 'violet', Bailleur: 'amber' };
+  const TEMP = { Chaud: 'bg-red-500', 'Tiède': 'bg-amber-400', Froid: 'bg-sky-400' };
+  const SRC_IC = { Facebook: 'facebook', Instagram: 'instagram', TikTok: 'music-2', WhatsApp: 'message-circle', 'Bouche-à-oreille': 'users', 'Site web': 'globe', 'Passage agence': 'store', Ouedkniss: 'shopping-bag' };
+  const opt = (l, list) => `<option value="">${l}</option>` + list.map(x => `<option>${esc(x)}</option>`).join('');
+  $('#fType').innerHTML = opt('Tous les types', ['Vendeur', 'Acheteur', 'Locataire', 'Bailleur']);
+  $('#fStage').innerHTML = opt('Toutes les étapes', STAGES.map(s => s.id));
+  $('#fSource').innerHTML = opt('Toutes les sources', Object.keys(SRC_IC));
+  $('#fAgent').innerHTML = opt('Tous les commerciaux', team().commerciaux.filter(a => a.actif).map(a => a.nom));
+  const money = c => c.type === 'Locataire' || c.type === 'Bailleur' ? fmt.da(c.budget) + ' / mois' : fmt.da(c.budget);
+  const stageBadge = s => { const x = STAGES.find(y => y.id === s); return `<span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-slate-50 ring-1 ring-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700"><span class="w-1.5 h-1.5 rounded-full ${x.color}"></span>${s}</span>`; };
+  const relanceCell = c => !c.relance ? '<span class="text-slate-300">—</span>' : c.relance < TODAY ? `<span class="inline-flex items-center gap-1 text-xs font-medium text-red-600 whitespace-nowrap">${icon('alarm-clock', 'w-3.5 h-3.5')}${fmt.dateShort(c.relance)}</span>` : c.relance === TODAY ? `<span class="text-xs font-medium text-amber-700 whitespace-nowrap">Aujourd'hui</span>` : `<span class="text-xs text-slate-600 whitespace-nowrap">${fmt.dateShort(c.relance)}</span>`;
+
+  function base() { return visibleClients().filter(c => scope === 'all' || c.agent === me); }
+  function filtered() {
+    const q = $('#q').value.trim().toLowerCase(), t = $('#fType').value, st = $('#fStage').value, so = $('#fSource').value, a = $('#fAgent').value;
+    return base().filter(c => (!t || c.type === t) && (!st || c.statut === st) && (!so || c.source === so) && (!a || c.agent === a) && (!q || (c.nom + ' ' + c.tel + ' ' + c.commune + ' ' + c.wilaya).toLowerCase().includes(q)))
+      .sort((x, y) => (y.notes[0]?.date || y.created).localeCompare(x.notes[0]?.date || x.created));
+  }
+
+  function kpis() {
+    const B = base(), m = TODAY.slice(0, 7);
+    const won = B.filter(c => c.statut === 'Gagné').length, lost = B.filter(c => c.statut === 'Perdu').length;
+    const late = B.filter(c => c.relance && c.relance < TODAY);
+    const k = (l, v, sub, ic, cls = '') => `<div class="card px-5 py-4"><div class="flex items-center gap-2 text-xs font-medium text-slate-500">${icon(ic, 'w-4 h-4')}${l}</div><p class="mt-2 text-xl font-semibold tnum ${cls || 'text-slate-900'}">${v}</p><p class="text-xs text-slate-400 mt-0.5">${sub}</p></div>`;
+    $('#kpis').innerHTML = [
+      k(scope === 'mine' ? 'Mes clients' : 'Clients', B.length, `${B.filter(c => c.type === 'Acheteur').length} acheteurs · ${B.filter(c => c.type === 'Vendeur').length} vendeurs`, 'contact'),
+      k('Nouveaux ce mois', B.filter(c => c.created.startsWith(m)).length, 'fiches créées en ' + fmt.month(m).toLowerCase(), 'user-plus'),
+      k('Relances en retard', late.length, late.length ? 'à traiter en priorité' : 'tout est à jour', 'alarm-clock', late.length ? 'text-red-600' : ''),
+      k('Taux de transformation', won + lost ? Math.round(won / (won + lost) * 100) + ' %' : '—', `${won} gagnés · ${lost} perdus`, 'target'),
+    ].join('');
+    const T = B.filter(c => c.relance && c.relance <= TODAY && (!me || c.agent === me)).sort((a, b) => a.relance.localeCompare(b.relance));
+    $('#todo').innerHTML = T.length ? `<div class="card p-5"><div class="flex items-center justify-between"><h3 class="font-semibold text-slate-900 flex items-center gap-2">${icon('phone-call', 'w-4 h-4 text-amber-600')} Relances à faire <span class="text-xs font-normal text-slate-500">${T.length}</span></h3><span class="text-xs text-slate-500">${me ? 'Vos clients' : 'Toute l\'agence'}</span></div>
+      <div class="mt-3 flex gap-3 overflow-x-auto thin-scroll pb-1">${T.slice(0, 12).map(c => `<a href="client.html?id=${c.id}" class="shrink-0 w-64 rounded-xl ring-1 ${c.relance < TODAY ? 'ring-red-200 bg-red-50/40' : 'ring-amber-200 bg-amber-50/40'} p-3 hover:shadow-card transition">
+        <div class="flex flex-wrap items-center gap-2">${avatar(c.nom, 'w-7 h-7 text-2xs')}<p class="font-medium text-sm text-slate-800 truncate">${esc(c.nom)}</p></div>
+        <p class="text-xs text-slate-600 mt-2 line-clamp-1">${esc(c.relanceNote)}</p><p class="text-2xs mt-1 ${c.relance < TODAY ? 'text-red-600' : 'text-amber-700'} font-medium">${c.relance < TODAY ? 'En retard depuis le ' + fmt.dateShort(c.relance) : 'Aujourd\'hui'}${me ? '' : ' · ' + c.agent}</p></a>`).join('')}</div></div>` : '';
+  }
+
+  function list(L) {
+    const pages = Math.max(1, Math.ceil(L.length / PER)); page = Math.min(page, pages);
+    const P = L.slice((page - 1) * PER, page * PER);
+    $('#body').innerHTML = `<div class="m-only divide-y divide-slate-100">${P.map(c => `
+        <a href="client.html?id=${c.id}" class="flex items-start gap-3 px-4 py-3.5 active:bg-slate-50">
+          ${avatar(c.nom, 'w-11 h-11 text-sm')}
+          <span class="flex-1 min-w-0">
+            <span class="flex items-center justify-between gap-2"><span class="font-medium text-slate-900 truncate flex items-center gap-1.5">${esc(c.nom)}<span class="w-2 h-2 rounded-full shrink-0 ${TEMP[c.temperature]}"></span></span>${stageBadge(c.statut)}</span>
+            <span class="block text-xs text-slate-500 mt-0.5 truncate">${c.type} · ${c.bien} · ${esc(c.commune)} · <span class="tnum">${money(c)}</span></span>
+            <span class="mt-2 flex items-center gap-3 text-xs text-slate-600"><span class="inline-flex items-center gap-1.5">${avatar(c.agent, 'w-5 h-5 text-[9px]')}${esc(c.agent)}${c.agent === me ? ' <span class="text-brand-700">(vous)</span>' : ''}</span><span class="ml-auto">${relanceCell(c)}</span></span>
+          </span>
+        </a>`).join('') || '<div class="py-14 text-center text-sm text-slate-500">Aucun client trouvé</div>'}</div>
+      <div class="d-only overflow-x-auto thin-scroll"><table class="tbl"><thead><tr><th>Client</th><th>Type</th><th>Projet</th><th>Source</th><th>Étape</th><th>Commercial</th><th>Relance</th></tr></thead><tbody>
+      ${P.map(c => `<tr class="cursor-pointer" onclick="location.href='client.html?id=${c.id}'">
+        <td><div class="flex items-center gap-3">${avatar(c.nom, 'w-9 h-9 text-xs')}<div><p class="font-medium text-slate-800 flex items-center gap-1.5 whitespace-nowrap">${esc(c.nom)}<span class="w-2 h-2 rounded-full ${TEMP[c.temperature]}" title="${c.temperature}"></span></p><p class="text-xs text-slate-500 tnum whitespace-nowrap">${canSeePhone(c) ? esc(c.tel) : `<span title="Numéro masqué : client d'un autre commercial">${maskPhone(c.tel)} ${icon('lock', 'w-3 h-3 inline -mt-0.5')}</span>`}</p></div></div></td>
+        <td>${badge(c.type, TYPE_TONE[c.type])}</td>
+        <td><p class="text-slate-800 whitespace-nowrap">${c.bien} · ${esc(c.commune)}</p><p class="text-xs text-slate-500 tnum">${c.type === 'Vendeur' || c.type === 'Bailleur' ? 'Prix ' : 'Budget '}${money(c)}</p></td>
+        <td><span class="inline-flex items-center gap-1.5 text-slate-600 whitespace-nowrap">${icon(SRC_IC[c.source] || 'globe', 'w-3.5 h-3.5 text-slate-400')}${c.source}</span></td>
+        <td>${stageBadge(c.statut)}</td>
+        <td><div class="flex items-center gap-2 whitespace-nowrap">${avatar(c.agent, 'w-6 h-6 text-2xs')}${esc(c.agent)}${c.agent === me ? ' <span class="text-2xs text-brand-700">(vous)</span>' : ''}</div></td>
+        <td>${relanceCell(c)}</td></tr>`).join('') || `<tr><td colspan="7" class="py-14 text-center text-slate-500">Aucun client trouvé</td></tr>`}
+      </tbody></table></div>
+      <div class="px-4 py-3 border-t border-slate-100 flex items-center justify-between text-sm text-slate-500"><span>${L.length} clients</span><div class="flex gap-1">${page > 1 ? `<button data-p="${page - 1}" class="btn btn-ghost !px-2">${icon('chevron-left')}</button>` : ''}<span class="px-2 py-1.5 tnum">Page ${page} / ${pages}</span>${page < pages ? `<button data-p="${page + 1}" class="btn btn-ghost !px-2">${icon('chevron-right')}</button>` : ''}</div></div>`;
+    $$('[data-p]').forEach(b => b.onclick = () => { page = +b.dataset.p; render(); });
+  }
+
+  function kanban(L) {
+    $('#body').innerHTML = `<div class="p-4 overflow-x-auto thin-scroll"><div class="flex gap-3 min-w-max">${STAGES.map(s => { const C = L.filter(c => c.statut === s.id); return `
+      <div class="kcol w-72 rounded-xl bg-slate-50 p-2.5 transition" data-stage="${s.id}">
+        <div class="flex items-center justify-between px-1.5 pb-2.5"><span class="flex items-center gap-2 text-sm font-semibold text-slate-800"><span class="w-2 h-2 rounded-full ${s.color}"></span>${s.id}</span><span class="text-xs text-slate-500 tnum">${C.length}</span></div>
+        <div class="space-y-2 min-h-[80px] max-h-[620px] overflow-y-auto thin-scroll">${C.map(c => `
+          <div class="kcard rounded-lg bg-white ring-1 ring-slate-200 p-3 shadow-sm hover:ring-brand-300 cursor-pointer" data-id="${c.id}" draggable="${canMoveClient(c)}">
+            <div class="flex items-start justify-between gap-2"><p class="font-medium text-sm text-slate-800">${esc(c.nom)}</p><span class="w-2 h-2 mt-1.5 rounded-full shrink-0 ${TEMP[c.temperature]}" title="${c.temperature}"></span></div>
+            <p class="text-xs text-slate-500 mt-0.5">${c.type} · ${c.bien} · ${esc(c.commune)}</p>
+            <div class="mt-2.5 flex items-center justify-between"><span class="text-xs font-medium text-slate-700 tnum">${money(c)}</span><span class="flex items-center gap-1.5">${c.relance && c.relance < TODAY ? `<span class="text-red-500" title="Relance en retard">${icon('alarm-clock', 'w-3.5 h-3.5')}</span>` : ''}${avatar(c.agent, 'w-5 h-5 text-[9px]')}</span></div>
+          </div>`).join('')}</div>
+      </div>`; }).join('')}</div>
+      <p class="mt-3 text-xs text-slate-500 flex items-center gap-1.5">${icon('move', 'w-3.5 h-3.5')} Glissez une carte pour changer l'étape. ${me && !can('crm.assign') ? 'Vous pouvez déplacer uniquement vos clients.' : ''}</p></div>`;
+    $$('.kcard').forEach(el => {
+      el.onclick = () => location.href = 'client.html?id=' + el.dataset.id;
+      el.ondragstart = e => { e.dataTransfer.setData('text/plain', el.dataset.id); el.classList.add('dragging'); };
+      el.ondragend = () => el.classList.remove('dragging');
+    });
+    $$('.kcol').forEach(col => {
+      col.ondragover = e => { e.preventDefault(); col.classList.add('drag-over'); };
+      col.ondragleave = () => col.classList.remove('drag-over');
+      col.ondrop = e => {
+        e.preventDefault(); col.classList.remove('drag-over');
+        const id = +e.dataTransfer.getData('text/plain'), all = clients(), c = all.find(x => x.id === id);
+        if (!c || c.statut === col.dataset.stage) return;
+        const from = c.statut; c.statut = col.dataset.stage;
+        c.notes.unshift({ id: 'n' + Date.now(), kind: 'statut', date: TODAY, author: currentUser().nom, text: `Étape : ${from} → ${c.statut}` });
+        if (['Gagné', 'Perdu'].includes(c.statut)) c.relance = null;
+        saveClients(all); audit('Client', `${c.nom} : ${from} → ${c.statut}`); render();
+        toast(c.statut === 'Gagné' ? `Bravo ! ${c.nom} est passé en Gagné 🎉` : `${c.nom} → ${c.statut}`);
+      };
+    });
+  }
+
+  function render() { kpis(); const L = filtered(); view === 'list' ? list(L) : kanban(L); WK.refreshIcons(); }
+  ['q', 'fType', 'fStage', 'fSource', 'fAgent'].forEach(id => $('#' + id).addEventListener('input', () => { page = 1; render(); }));
+  WK.seg($('#scope'), v => { scope = v; page = 1; render(); });
+  WK.seg($('#view'), v => { view = v; render(); });
+  $('#ftoggle').onclick = () => { const f = $('#filt'); f.classList.toggle('hidden'); f.classList.toggle('grid'); };
+  $('#export') && ($('#export').onclick = () => { const L = filtered(); exportCSV('clients.csv', [['Nom', 'Téléphone', 'E-mail', 'Type', 'Bien', 'Commune', 'Wilaya', 'Budget/Prix', 'Source', 'Étape', 'Commercial', 'Relance'], ...L.map(c => [c.nom, c.tel, c.email, c.type, c.bien, c.commune, c.wilaya, c.budget, c.source, c.statut, c.agent, c.relance || ''])]); audit('Export', `${L.length} clients exportés`); });
+
+  $('#new') && ($('#new').onclick = () => {
+    const agents = team().commerciaux.filter(a => a.actif).map(a => a.nom);
+    const p = openPanel(`${panelHead('Nouveau client', 'La fiche sera visible par l\'équipe selon les droits de chacun')}
+      <form id="f" class="flex-1 overflow-y-auto p-6 space-y-5">
+        <div><label class="label">Type de client *</label><div class="grid grid-cols-4 gap-2">${['Acheteur', 'Vendeur', 'Locataire', 'Bailleur'].map((t, i) => `<label class="cursor-pointer"><input type="radio" name="type" value="${t}" class="peer sr-only" ${i === 0 ? 'checked' : ''}><span class="block text-center rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-600 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-800">${t}</span></label>`).join('')}</div></div>
+        <div class="grid grid-cols-2 gap-4"><div><label class="label">Nom complet *</label><input name="nom" class="field" placeholder="Ex. Karim Haddad"></div><div><label class="label">Téléphone *</label><input name="tel" class="field tnum" placeholder="0550 12 34 56"></div></div>
+        <div class="grid grid-cols-2 gap-4"><div><label class="label">E-mail</label><input name="email" type="email" class="field" placeholder="optionnel"></div><div><label class="label">Source</label><select name="source" class="field">${Object.keys(SRC_IC).map(s => `<option>${s}</option>`).join('')}</select></div></div>
+        <div class="grid grid-cols-3 gap-4"><div><label class="label">Bien</label><select name="bien" class="field">${['Appartement', 'Villa', 'Terrain', 'Maison', 'Local commercial', 'Duplex'].map(s => `<option>${s}</option>`).join('')}</select></div><div><label class="label">Commune</label><input name="commune" class="field" placeholder="Ex. Hydra"></div><div><label class="label">Wilaya</label><select name="wilaya" class="field">${['Alger', 'Blida', 'Boumerdès', 'Tipaza', 'Oran', 'Autre'].map(s => `<option>${s}</option>`).join('')}</select></div></div>
+        <div class="grid grid-cols-2 gap-4"><div><label class="label">Budget / prix</label><div class="relative"><input name="budget" type="number" step="100000" class="field pr-12 tnum" placeholder="15000000"><span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">DA</span></div></div>
+          <div><label class="label">Commercial responsable</label><select name="agent" class="field" ${me && !can('crm.assign') ? 'disabled' : ''}>${agents.map(a => `<option ${a === (me || agents[0]) ? 'selected' : ''}>${a}</option>`).join('')}</select></div></div>
+        <div><label class="label">Première note</label><textarea name="note" rows="3" class="field" placeholder="Ce que le client recherche, ses contraintes…"></textarea></div>
+      </form>
+      <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2"><button data-close class="btn btn-secondary">Annuler</button><button id="save" class="btn btn-primary">${icon('check')} Créer la fiche</button></div>`);
+    $('#save', p).onclick = () => {
+      const f = $('#f', p), d = Object.fromEntries(new FormData(f));
+      const bad = ['nom', 'tel'].filter(k => !d[k].trim()); ['nom', 'tel'].forEach(k => f.elements[k].classList.toggle('!border-red-400', bad.includes(k))); if (bad.length) return;
+      const all = clients(), id = Math.max(...all.map(c => c.id)) + 1, user = currentUser().nom;
+      const c = { id, nom: d.nom.trim(), tel: d.tel.trim(), email: d.email, type: d.type, source: d.source, wilaya: d.wilaya, commune: d.commune || '—', bien: d.bien, budget: +d.budget || 0, surface: null, pieces: null,
+        statut: 'Nouveau', temperature: 'Tiède', agent: d.agent || me, created: TODAY, relance: null, relanceNote: '', extras: [], rdvIds: [],
+        notes: d.note.trim() ? [{ id: 'n' + Date.now(), kind: 'note', date: TODAY, author: user, text: d.note.trim() }] : [] };
+      saveClients([c, ...all]); audit('Client', `Fiche créée : ${c.nom} (${c.type})`); closePanel(); location.href = 'client.html?id=' + id + '&new=1';
+    };
+  });
+  render();
+  if (new URLSearchParams(location.search).get('new') && $('#new')) $('#new').click();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="icon" href="assets/logo.jpg"><link rel="apple-touch-icon" href="assets/logo.jpg">
+<title>Utilisateurs & rôles · El Wakil Immobilier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script><script src="assets/tw.js"></script>
+<link rel="stylesheet" href="assets/app.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="assets/data.js"></script><script src="assets/app.js"></script>
+</head>
+<body>
+<div id="page">
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Utilisateurs & rôles</h1>
+      <p class="text-sm text-slate-500 mt-1">Décidez qui accède à quoi. Chaque action est tracée dans le journal.</p>
+    </div>
+    <div class="flex items-center gap-2" id="actions"></div>
+  </div>
+
+  <div class="mt-6 border-b border-slate-200 flex gap-6 overflow-x-auto thin-scroll whitespace-nowrap" id="tabs">
+    <button data-t="users" class="pb-3 text-sm font-medium border-b-2 flex items-center gap-2"><i data-lucide="users-round" class="w-4 h-4"></i> Utilisateurs <span class="text-xs rounded-full bg-slate-100 px-1.5 text-slate-600" id="cU"></span></button>
+    <button data-t="roles" class="pb-3 text-sm font-medium border-b-2 flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4"></i> Rôles & permissions <span class="text-xs rounded-full bg-slate-100 px-1.5 text-slate-600" id="cR"></span></button>
+    <button data-t="audit" class="pb-3 text-sm font-medium border-b-2 flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Journal d'activité</button>
+  </div>
+
+  <div id="view" class="mt-6"></div>
+</div>
+
+<script>
+WK.mount({ id: 'utilisateurs', title: 'Utilisateurs & rôles', section: 'Administration', perm: 'users.manage', help: 'utilisateurs' }, () => {
+  const { $, $$, store, users, roles, PERMISSIONS, ALL_PERMS, avatar, badge, roleBadge, icon, esc, toast, openPanel, closePanel, panelHead, audit, currentUser, currentRoleId } = WK;
+  let tab = location.hash === '#roles' ? 'roles' : location.hash === '#audit' ? 'audit' : 'users';
+  let selRole = 'saisie', roleView = 'edit', uq = '', urole = '';
+  const saveUsers = u => store.set('users', u), saveRoles = r => store.set('roles', r);
+  const STATUS = { 'Actif': ['green', 'circle-check'], 'Invitation envoyée': ['amber', 'mail'], 'Suspendu': ['red', 'ban'] };
+  const isOwner = currentRoleId() === 'owner';
+
+  function tabs() {
+    $$('#tabs button').forEach(b => { const on = b.dataset.t === tab; b.classList.toggle('border-brand-600', on); b.classList.toggle('text-slate-900', on); b.classList.toggle('border-transparent', !on); b.classList.toggle('text-slate-500', !on); });
+    $('#cU').textContent = users().length; $('#cR').textContent = roles().length;
+    $('#actions').innerHTML = tab === 'users' ? `<button id="invite" class="btn btn-primary">${icon('user-plus')} Inviter un utilisateur</button>`
+      : tab === 'roles' ? `<button id="newRole" class="btn btn-primary">${icon('plus')} Nouveau rôle</button>` : `<button id="expAudit" class="btn btn-secondary">${icon('download')} Exporter</button>`;
+    $('#invite') && ($('#invite').onclick = () => invite());
+    $('#newRole') && ($('#newRole').onclick = newRole);
+    $('#expAudit') && ($('#expAudit').onclick = () => WK.exportCSV('journal.csv', [['Date', 'Utilisateur', 'Action', 'Détail'], ...auditLog().map(a => [a.when, a.user, a.action, a.detail])]));
+    ({ users: renderUsers, roles: renderRoles, audit: renderAudit })[tab]();
+    WK.refreshIcons();
+  }
+
+  /* ─────────── Utilisateurs ─────────── */
+  function renderUsers() {
+    const U = users(), R = roles();
+    const L = U.filter(u => (!urole || u.role === urole) && (!uq || (u.nom + u.email).toLowerCase().includes(uq.toLowerCase())));
+    const st = (l, v, ic, tone) => `<div class="card px-5 py-4 flex items-center gap-4"><span class="w-10 h-10 rounded-xl ${tone} flex items-center justify-center">${icon(ic, 'w-5 h-5')}</span><div><p class="text-xs font-medium text-slate-500">${l}</p><p class="text-lg font-semibold tnum">${v}</p></div></div>`;
+    $('#view').innerHTML = `
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        ${st('Utilisateurs', U.length, 'users-round', 'bg-slate-50 ring-1 ring-slate-200 text-slate-600')}
+        ${st('Actifs', U.filter(u => u.statut === 'Actif').length, 'circle-check', 'bg-emerald-50 text-emerald-600')}
+        ${st('Invitations en attente', U.filter(u => u.statut === 'Invitation envoyée').length, 'mail', 'bg-amber-50 text-amber-600')}
+        ${st('Accès aux finances', U.filter(u => (R.find(r => r.id === u.role) || { perms: [] }).perms.includes('finance.view') && u.statut !== 'Suspendu').length, 'landmark', 'bg-violet-50 text-violet-600')}
+      </div>
+      <div class="card mt-6 overflow-hidden">
+        <div class="p-4 border-b border-slate-100 flex flex-wrap gap-2">
+          <div class="relative flex-1 min-w-[220px]">${icon('search', 'w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400')}<input id="uq" class="field !pl-9" placeholder="Rechercher par nom ou e-mail…" value="${esc(uq)}"></div>
+          <select id="urole" class="field !w-auto"><option value="">Tous les rôles</option>${R.map(r => `<option value="${r.id}" ${r.id === urole ? 'selected' : ''}>${esc(r.nom)}</option>`).join('')}</select>
+        </div>
+        <div class="overflow-x-auto"><table class="tbl m-stack"><thead><tr><th>Utilisateur</th><th>Rôle</th><th>Statut</th><th>Sécurité</th><th>Dernière activité</th><th class="w-10"></th></tr></thead><tbody>
+        ${L.map(u => { const s = STATUS[u.statut] || ['gray']; const locked = u.role === 'owner'; return `<tr>
+          <td><div class="flex items-center gap-3">${avatar(u.nom, 'w-9 h-9 text-xs')}<div><p class="font-medium text-slate-800 flex items-center gap-1.5">${esc(u.nom)}${u.nom === currentUser().nom ? '<span class="text-2xs text-slate-400 font-normal">(vous)</span>' : ''}</p><p class="text-xs text-slate-500">${esc(u.email)}</p></div></div></td>
+          <td>${u.agent ? `<p class="text-2xs text-slate-500 mb-1 flex items-center gap-1">${icon('link-2', 'w-3 h-3')}Fiche commerciale : <b class="text-slate-700">${esc(u.agent)}</b></p>` : ''}${locked ? roleBadge(u.role) : `<select data-role-of="${u.id}" class="field !w-auto !py-1 !text-xs font-medium">${R.filter(r => r.id !== 'owner').map(r => `<option value="${r.id}" ${r.id === u.role ? 'selected' : ''}>${esc(r.nom)}</option>`).join('')}</select>`}</td>
+          <td>${badge(u.statut, s[0], s[1])}</td>
+          <td>${u.statut === 'Actif' ? `<span class="inline-flex items-center gap-1.5 text-xs ${u.role === 'owner' || u.role === 'comptable' ? 'text-emerald-700' : 'text-slate-500'}">${icon(u.role === 'owner' || u.role === 'comptable' ? 'shield-check' : 'shield', 'w-3.5 h-3.5')}${u.role === 'owner' || u.role === 'comptable' ? 'Double authentification' : 'Mot de passe'}</span>` : '<span class="text-xs text-slate-400">—</span>'}</td>
+          <td class="text-slate-500 text-sm whitespace-nowrap">${esc(u.last)}</td>
+          <td class="relative text-right">${locked ? `<span class="text-slate-300" title="Le propriétaire ne peut pas être modifié">${icon('lock', 'w-4 h-4')}</span>` : `<button data-menu="um-${u.id}" class="btn btn-ghost !p-1.5">${icon('more-horizontal')}</button>
+            <div id="um-${u.id}" class="menu right-0 mt-1">
+              ${u.statut === 'Invitation envoyée' ? `<button data-act="resend" data-u="${u.id}" class="menu-item">${icon('send')} Renvoyer l'invitation</button>` : ''}
+              <button data-act="edit" data-u="${u.id}" class="menu-item">${icon('pencil')} Modifier</button>
+              <button data-act="reset" data-u="${u.id}" class="menu-item">${icon('key-round')} Réinitialiser le mot de passe</button>
+              ${u.statut === 'Suspendu' ? `<button data-act="activate" data-u="${u.id}" class="menu-item">${icon('circle-check')} Réactiver</button>` : `<button data-act="suspend" data-u="${u.id}" class="menu-item">${icon('ban')} Suspendre l'accès</button>`}
+              <div class="my-1 border-t border-slate-100"></div>
+              <button data-act="delete" data-u="${u.id}" class="menu-item !text-red-600">${icon('trash-2', 'w-4 h-4 !text-red-500')} Supprimer</button>
+            </div>`}</td></tr>`; }).join('')}
+        </tbody></table></div>
+      </div>
+      <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        ${[['shield-check', 'Double authentification', 'Obligatoire pour les rôles ayant accès aux finances.', true], ['timer', 'Déconnexion automatique', 'Après 30 minutes d\'inactivité.', true], ['smartphone', 'Connexion depuis un nouvel appareil', 'Le propriétaire reçoit une alerte par e-mail (appareil, lieu, heure).', false]].map(([ic, t, d, on]) => `<div class="card p-5 flex gap-4"><span class="w-9 h-9 rounded-lg bg-slate-50 ring-1 ring-slate-200 text-slate-600 flex items-center justify-center shrink-0">${icon(ic)}</span><div class="flex-1"><p class="text-sm font-medium text-slate-900">${t}</p><p class="text-xs text-slate-500 mt-0.5">${d}</p></div><button class="switch ${on ? 'on' : ''}" onclick="this.classList.toggle('on')"></button></div>`).join('')}
+      </div>`;
+    $('#uq').oninput = e => { uq = e.target.value; renderUsers(); WK.refreshIcons(); const i = $('#uq'); i.focus(); i.setSelectionRange(uq.length, uq.length); };
+    $('#urole').onchange = e => { urole = e.target.value; renderUsers(); WK.refreshIcons(); };
+    $$('[data-role-of]').forEach(s => s.onchange = () => {
+      const U = users(), u = U.find(x => x.id === +s.dataset.roleOf), old = u.role; u.role = s.value; saveUsers(U);
+      audit('Rôle modifié', `${u.nom} : ${roles().find(r => r.id === old).nom} → ${roles().find(r => r.id === u.role).nom}`); toast(`${u.nom} est maintenant ${roles().find(r => r.id === u.role).nom}`);
+    });
+    $$('[data-act]').forEach(b => b.onclick = () => {
+      const U = users(), u = U.find(x => x.id === +b.dataset.u), a = b.dataset.act;
+      if (a === 'edit') return invite(u);
+      if (a === 'resend') { audit('Invitation', `Renvoyée à ${u.nom}`); return toast('Invitation renvoyée à ' + u.email, 'send'); }
+      if (a === 'reset') { audit('Sécurité', `Mot de passe réinitialisé : ${u.nom}`); return toast('Lien de réinitialisation envoyé par e-mail à ' + u.email, 'key-round'); }
+      if (a === 'suspend') { u.statut = 'Suspendu'; audit('Suspension', `${u.nom} suspendu(e)`); toast(u.nom + ' ne peut plus se connecter', 'ban'); }
+      if (a === 'activate') { u.statut = 'Actif'; audit('Réactivation', u.nom); toast(u.nom + ' réactivé(e)'); }
+      if (a === 'delete') { if (!confirm(`Supprimer ${u.nom} ?`)) return; U.splice(U.indexOf(u), 1); audit('Suppression', `Utilisateur ${u.nom}`); toast('Utilisateur supprimé', 'trash-2'); }
+      saveUsers(U); tabs();
+    });
+  }
+
+  function invite(u) {
+    const R = roles().filter(r => r.id !== 'owner'), edit = !!u;
+    u = u || { nom: '', email: '', tel: '', role: 'saisie' };
+    const keyPerms = [['finance.view', 'Montants financiers'], ['crm.view', 'Fichier clients'], ['rdv.create', 'Saisie des RDV'], ['paie.view', 'Paie'], ['users.manage', 'Gestion des accès']];
+    const p = openPanel(`${panelHead(edit ? 'Modifier l\'utilisateur' : 'Inviter un utilisateur', edit ? '' : 'Une invitation sera envoyée par e-mail.')}
+      <form id="f" class="flex-1 overflow-y-auto p-6 space-y-5">
+        <div><label class="label">Nom complet</label><input name="nom" class="field" value="${esc(u.nom)}" placeholder="Ex. Amina Boudiaf"></div>
+        <div class="grid grid-cols-2 gap-4"><div><label class="label">E-mail</label><input name="email" type="email" class="field" value="${esc(u.email)}" placeholder="nom@exemple.dz"></div><div><label class="label">Téléphone <span class="text-slate-400 font-normal">(optionnel)</span></label><input name="tel" class="field" value="${esc(u.tel || '')}" placeholder="05 •• •• •• ••"></div></div>
+        <div><label class="label">Rôle</label><div class="space-y-2">${R.map(r => `<label class="block cursor-pointer"><input type="radio" name="role" value="${r.id}" class="peer sr-only" ${r.id === u.role ? 'checked' : ''}>
+          <div class="rounded-xl border border-slate-200 p-4 peer-checked:border-brand-500 peer-checked:ring-2 peer-checked:ring-brand-500/15 hover:border-slate-300 transition">
+            <div class="flex items-center justify-between"><span class="font-medium text-slate-900">${esc(r.nom)}</span><span class="text-2xs text-slate-500">${r.perms.length} / ${ALL_PERMS.length} permissions</span></div>
+            <p class="text-xs text-slate-500 mt-0.5">${esc(r.desc)}</p>
+            <div class="mt-2.5 flex flex-wrap gap-1.5">${keyPerms.map(([k, l]) => r.perms.includes(k) ? `<span class="inline-flex items-center gap-1 text-2xs rounded bg-emerald-50 text-emerald-700 px-1.5 py-0.5">${icon('check', 'w-3 h-3')}${l}</span>` : `<span class="inline-flex items-center gap-1 text-2xs rounded bg-slate-100 text-slate-400 px-1.5 py-0.5 line-through">${l}</span>`).join('')}</div>
+          </div></label>`).join('')}</div>
+          <div id="agWrap" class="mt-4 ${u.role === 'commercial' ? '' : 'hidden'} rounded-xl bg-emerald-50/60 ring-1 ring-emerald-200 p-4"><label class="label">Fiche commerciale liée</label><select name="agent" class="field">${WK.team().commerciaux.filter(a => a.actif).map(a => `<option ${a.nom === u.agent ? 'selected' : ''}>${a.nom}</option>`).join('')}</select><p class="text-xs text-slate-600 mt-1.5">Le vendeur verra ses propres RDV, sa rémunération et ses clients dans « Mon espace ».</p></div>
+          <a href="#roles" id="toRoles" class="inline-flex items-center gap-1 text-xs font-medium text-brand-700 mt-2 hover:underline">${icon('settings-2', 'w-3.5 h-3.5')} Personnaliser les rôles</a></div>
+      </form>
+      <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2"><button data-close class="btn btn-secondary">Annuler</button><button id="save" class="btn btn-primary">${icon(edit ? 'check' : 'send')} ${edit ? 'Enregistrer' : 'Envoyer l\'invitation'}</button></div>`);
+    $$('input[name=role]', p).forEach(r => r.onchange = () => $('#agWrap', p).classList.toggle('hidden', r.value !== 'commercial' || !r.checked));
+    $('#toRoles', p).onclick = e => { e.preventDefault(); closePanel(); tab = 'roles'; tabs(); };
+    $('#save', p).onclick = () => {
+      const f = $('#f', p), d = Object.fromEntries(new FormData(f));
+      if (d.role !== 'commercial') d.agent = undefined;
+      if (!d.nom.trim() || !/\S+@\S+\.\S+/.test(d.email)) { [['nom', !d.nom.trim()], ['email', !/\S+@\S+\.\S+/.test(d.email)]].forEach(([k, bad]) => f.elements[k].classList.toggle('!border-red-400', bad)); return; }
+      const U = users();
+      if (edit) { Object.assign(U.find(x => x.id === u.id), d); audit('Utilisateur modifié', d.nom); }
+      else { U.push({ id: Date.now(), ...d, statut: 'Invitation envoyée', last: '—' }); audit('Invitation', `${d.nom} invité(e) comme ${roles().find(r => r.id === d.role).nom}`); }
+      saveUsers(U); closePanel(); tab = 'users'; tabs(); toast(edit ? 'Utilisateur mis à jour' : 'Invitation envoyée à ' + d.email, edit ? 'check-circle-2' : 'send');
+    };
+  }
+
+  /* ─────────── Rôles ─────────── */
+  function renderRoles() {
+    const R = roles(), U = users();
+    if (!R.find(r => r.id === selRole)) selRole = R[0].id;
+    const r = R.find(x => x.id === selRole);
+    $('#view').innerHTML = `
+      <div class="flex justify-end mb-4"><div class="seg" id="rv"><button data-v="edit" class="${roleView === 'edit' ? 'on' : ''}">${icon('sliders-horizontal', 'w-3.5 h-3.5 inline -mt-0.5 mr-1')}Éditeur</button><button data-v="matrix" class="${roleView === 'matrix' ? 'on' : ''}">${icon('table-2', 'w-3.5 h-3.5 inline -mt-0.5 mr-1')}Comparer les rôles</button></div></div>
+      ${roleView === 'matrix' ? matrix(R) : `
+      <div class="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 items-start">
+        <div class="space-y-2" id="roleList">${R.map(x => { const n = U.filter(u => u.role === x.id).length; return `<button data-r="${x.id}" class="w-full text-left rounded-xl border p-4 transition ${x.id === selRole ? 'border-brand-500 bg-white ring-2 ring-brand-500/15 shadow-card' : 'border-slate-200 bg-white/60 hover:bg-white hover:border-slate-300'}">
+          <div class="flex items-center justify-between"><span class="font-medium text-slate-900 flex items-center gap-1.5">${x.system ? icon('crown', 'w-3.5 h-3.5 text-violet-500') : ''}${esc(x.nom)}</span><span class="flex -space-x-1.5">${U.filter(u => u.role === x.id).slice(0, 3).map(u => `<span class="ring-2 ring-white rounded-full">${avatar(u.nom, 'w-6 h-6 text-2xs')}</span>`).join('')}</span></div>
+          <p class="text-xs text-slate-500 mt-1 line-clamp-2">${esc(x.desc)}</p>
+          <div class="mt-3 flex items-center gap-3 text-2xs text-slate-500"><span>${n} utilisateur${n > 1 ? 's' : ''}</span><span>·</span><span>${x.perms.length} permissions</span>${x.perms.includes('finance.view') ? '<span>·</span><span class="text-violet-600 font-medium">Finances</span>' : ''}</div></button>`; }).join('')}</div>
+
+        <div class="card">
+          <div class="p-6 border-b border-slate-100">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div class="flex-1 min-w-[240px] space-y-3">
+                <input id="rName" class="field !text-lg !font-semibold !border-transparent !px-0 hover:!border-slate-200 focus:!px-3" value="${esc(r.nom)}" ${r.system ? 'disabled' : ''}>
+                <input id="rDesc" class="field !text-sm !text-slate-500 !border-transparent !px-0 hover:!border-slate-200 focus:!px-3" value="${esc(r.desc)}" ${r.system ? 'disabled' : ''}>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <button id="dup" class="btn btn-secondary">${icon('copy')} Dupliquer</button>
+                ${!r.system ? `<button id="delRole" class="btn btn-danger">${icon('trash-2')}</button>` : ''}
+              </div>
+            </div>
+            ${r.system ? `<div class="mt-4 rounded-lg bg-violet-50 ring-1 ring-violet-100 p-3 text-sm text-violet-900 flex gap-2.5">${icon('lock', 'w-4 h-4 shrink-0 mt-0.5')}<span>Le rôle Propriétaire a tous les droits et ne peut pas être modifié. Il garantit que vous ne perdez jamais l'accès à votre agence.</span></div>` : ''}
+            <div class="mt-4 flex items-center gap-3"><div class="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full rounded-full bg-brand-500 transition-all" style="width:${r.perms.length / ALL_PERMS.length * 100}%"></div></div><span class="text-xs text-slate-600 tnum">${r.perms.length} / ${ALL_PERMS.length} permissions</span></div>
+          </div>
+          <div class="divide-y divide-slate-100">${PERMISSIONS.map(g => { const on = g.items.filter(i => r.perms.includes(i[0])).length; return `
+            <div class="p-6">
+              <div class="flex items-center justify-between"><div class="flex items-center gap-2.5"><span class="w-8 h-8 rounded-lg bg-slate-50 ring-1 ring-slate-200 text-slate-600 flex items-center justify-center">${icon(g.icon)}</span><p class="font-semibold text-slate-900">${g.group}</p><span class="text-xs text-slate-400">${on}/${g.items.length}</span></div>
+                ${r.system ? '' : `<button data-all="${g.group}" class="text-xs font-medium text-brand-700 hover:underline">${on === g.items.length ? 'Tout retirer' : 'Tout autoriser'}</button>`}</div>
+              <div class="mt-3 grid sm:grid-cols-2 gap-x-8">${g.items.map(([k, l, d]) => `<div class="flex items-start justify-between gap-4 py-2.5"><div><p class="text-sm text-slate-800 ${k === 'finance.view' ? 'font-medium' : ''}">${l}${k === 'finance.view' ? ' ' + badge('Sensible', 'violet') : ''}${k === 'rdv.delete' ? ' ' + badge('Irréversible', 'red') : ''}</p>${d ? `<p class="text-xs text-slate-500 mt-0.5">${d}</p>` : ''}</div><button data-p="${k}" class="switch mt-0.5 ${r.perms.includes(k) ? 'on' : ''} ${r.system ? 'disabled' : ''}"></button></div>`).join('')}</div>
+            </div>`; }).join('')}</div>
+          ${r.system ? '' : `<div class="p-4 border-t border-slate-100 bg-slate-50/60 rounded-b-[.875rem] flex items-center justify-between gap-3"><p class="text-xs text-slate-500">${icon('info', 'w-3.5 h-3.5 inline -mt-0.5')} Les changements s'appliquent immédiatement aux ${U.filter(u => u.role === r.id).length} utilisateur(s) de ce rôle.</p><button id="preview" class="btn btn-secondary">${icon('eye')} Voir l'app avec ce rôle</button></div>`}
+        </div>
+      </div>`}`;
+    WK.seg($('#rv'), v => { roleView = v; tabs(); });
+    if (roleView === 'matrix') return;
+    $$('#roleList [data-r]').forEach(b => b.onclick = () => { selRole = b.dataset.r; tabs(); });
+    const upd = (fn, msg) => { const R2 = roles(), x = R2.find(y => y.id === selRole); fn(x); saveRoles(R2); if (msg) audit('Rôles', msg); tabs(); };
+    if (!r.system) {
+      $$('[data-p]').forEach(b => b.onclick = () => { const k = b.dataset.p, had = r.perms.includes(k); upd(x => x.perms = had ? x.perms.filter(p => p !== k) : [...x.perms, k], `« ${WK.permLabel(k)} » ${had ? 'retirée du' : 'ajoutée au'} rôle ${r.nom}`); toast(`${r.nom} : ${had ? 'permission retirée' : 'permission ajoutée'}`); });
+      $$('[data-all]').forEach(b => b.onclick = () => { const g = PERMISSIONS.find(x => x.group === b.dataset.all), keys = g.items.map(i => i[0]), all = keys.every(k => r.perms.includes(k)); upd(x => x.perms = all ? x.perms.filter(p => !keys.includes(p)) : [...new Set([...x.perms, ...keys])], `${g.group} : ${all ? 'tout retiré' : 'tout autorisé'} (${r.nom})`); });
+      $('#rName').onchange = e => upd(x => x.nom = e.target.value, `Rôle renommé : ${e.target.value}`);
+      $('#rDesc').onchange = e => upd(x => x.desc = e.target.value);
+      $('#delRole').onclick = () => { const n = users().filter(u => u.role === r.id).length; if (n) return toast(`Impossible : ${n} utilisateur(s) ont ce rôle`, 'alert-triangle'); if (!confirm('Supprimer le rôle ' + r.nom + ' ?')) return; saveRoles(roles().filter(x => x.id !== r.id)); audit('Rôles', 'Rôle supprimé : ' + r.nom); selRole = 'saisie'; tabs(); };
+      $('#preview').onclick = () => { store.set('role', r.id); location.href = 'dashboard.html'; };
+    }
+    $('#dup').onclick = () => { const id = 'r' + Date.now(); saveRoles([...roles(), { ...r, id, nom: r.nom + ' (copie)', system: false, color: 'blue', perms: [...r.perms] }]); audit('Rôles', 'Rôle dupliqué : ' + r.nom); selRole = id; tabs(); };
+  }
+
+  function matrix(R) {
+    return `<div class="card overflow-x-auto thin-scroll"><table class="tbl"><thead><tr><th class="min-w-[260px]">Permission</th>${R.map(r => `<th class="text-center !text-slate-800">${esc(r.nom)}</th>`).join('')}</tr></thead><tbody>
+      ${PERMISSIONS.map(g => `<tr class="bg-slate-50/70"><td colspan="${R.length + 1}" class="!py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">${g.group}</td></tr>` + g.items.map(([k, l]) => `<tr><td class="text-sm">${l}</td>${R.map(r => `<td class="text-center">${r.perms.includes(k) ? `<span class="inline-flex w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 items-center justify-center">${icon('check', 'w-3.5 h-3.5')}</span>` : `<span class="inline-flex w-6 h-6 rounded-full text-slate-300 items-center justify-center">${icon('minus', 'w-3.5 h-3.5')}</span>`}</td>`).join('')}</tr>`).join('')).join('')}
+    </tbody></table></div>`;
+  }
+
+  function newRole() {
+    const p = openPanel(`<div class="p-6"><h3 class="text-lg font-semibold">Nouveau rôle</h3><p class="text-sm text-slate-500 mt-1">Partez d'un modèle, puis ajustez les permissions.</p>
+      <div class="mt-5 space-y-4"><div><label class="label">Nom du rôle</label><input id="n" class="field" placeholder="Ex. Responsable marketing"></div>
+      <div><label class="label">Partir de</label><select id="from" class="field"><option value="">Aucune permission</option>${roles().map(r => `<option value="${r.id}">${esc(r.nom)}</option>`).join('')}</select></div></div>
+      <div class="mt-6 flex justify-end gap-2"><button data-close class="btn btn-secondary">Annuler</button><button id="ok" class="btn btn-primary">Créer le rôle</button></div></div>`, { kind: 'modal', width: '440px' });
+    $('#n', p).focus();
+    $('#ok', p).onclick = () => { const n = $('#n', p).value.trim(); if (!n) return $('#n', p).classList.add('!border-red-400'); const from = roles().find(r => r.id === $('#from', p).value); const id = 'r' + Date.now();
+      saveRoles([...roles(), { id, nom: n, desc: 'Rôle personnalisé', color: 'blue', system: false, perms: from ? [...from.perms] : ['dashboard.view'] }]); audit('Rôles', 'Rôle créé : ' + n); selRole = id; roleView = 'edit'; closePanel(); tabs(); toast('Rôle « ' + n + ' » créé'); };
+  }
+
+  /* ─────────── Journal ─────────── */
+  function auditLog() {
+    const seed = [
+      ['2026-11-19T09:42', 'Nadia Belkacem', 'Création', 'RDV — Chéraga villa (Walid / Anis)'],
+      ['2026-11-18T18:40', 'Karim Mansouri', 'Export', 'Paie d\'octobre 2026 exportée'],
+      ['2026-11-17T21:05', 'Hakim Benali', 'Invitation', 'Yasmine Tahri invitée comme Administrateur'],
+      ['2026-11-17T16:12', 'Nadia Belkacem', 'Mission', 'Anis → Oran (nuitée)'],
+      ['2026-11-16T11:30', 'Sofiane Rahmani', 'Modification', 'RDV — Bou Ismaïl appart : revenu 28 000 DA'],
+      ['2026-11-15T10:02', 'Hakim Benali', 'Rôles', '« Voir les montants financiers » retirée du rôle Superviseur commercial'],
+      ['2026-11-15T09:58', 'Hakim Benali', 'Sponsoring', 'Budgets de novembre 2026 saisis'],
+      ['2026-11-12T15:20', 'Asma Hadjadj', 'Client', 'Note ajoutée sur la fiche de Toufik Bensalem'],
+      ['2026-11-10T09:00', 'Hakim Benali', 'Invitation', 'Comptes commerciaux créés pour Asma, Lina et Walid'],
+      ['2026-11-01T08:00', 'Système', 'Synchronisation', 'Rendez-vous d\'octobre archivés · paie d\'octobre clôturée'],
+      ['2026-10-02T14:21', 'Hakim Benali', 'Suspension', 'Lamia Ouali suspendue'],
+    ].map(([t, user, action, detail]) => ({ t, user, action, detail }));
+    return store.get('audit', []).concat(seed).map(a => ({ ...a, when: new Date(a.t).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) }));
+  }
+  function renderAudit() {
+    const L = auditLog();
+    const IC = { 'Création': ['plus', 'bg-emerald-50 text-emerald-600'], 'Suppression': ['trash-2', 'bg-red-50 text-red-600'], 'Rôles': ['shield-check', 'bg-violet-50 text-violet-600'], 'Rôle modifié': ['shield-check', 'bg-violet-50 text-violet-600'], 'Invitation': ['send', 'bg-amber-50 text-amber-600'], 'Export': ['download', 'bg-slate-100 text-slate-600'], 'Paie': ['banknote', 'bg-emerald-50 text-emerald-600'], 'Suspension': ['ban', 'bg-red-50 text-red-600'] };
+    $('#view').innerHTML = `<div class="card overflow-hidden"><div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between"><div><h3 class="font-semibold text-slate-900">Journal d'activité</h3><p class="text-sm text-slate-500">Qui a fait quoi, et quand. Non modifiable.</p></div><span class="text-xs text-slate-500">${L.length} événements</span></div>
+      <ul class="divide-y divide-slate-100">${L.map(a => { const ic = IC[a.action] || ['activity', 'bg-brand-50 text-brand-700']; return `<li class="px-5 py-3.5 flex items-center gap-4 hover:bg-slate-50/60">
+        <span class="w-9 h-9 rounded-lg ${ic[1]} flex items-center justify-center shrink-0">${icon(ic[0])}</span>
+        <div class="flex-1 min-w-0"><p class="text-sm text-slate-800"><b class="font-medium">${esc(a.user)}</b> <span class="text-slate-400">·</span> ${esc(a.action)}</p><p class="text-sm text-slate-500 truncate">${esc(a.detail)}</p></div>
+        <span class="text-xs text-slate-400 whitespace-nowrap tnum">${a.when}</span></li>`; }).join('')}</ul></div>`;
+  }
+
+  $('#tabs').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; tab = b.dataset.t; history.replaceState(null, '', '#' + tab); tabs(); };
+  tabs();
+});
+</script>
+</body>
+</html>

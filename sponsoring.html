@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="icon" href="assets/logo.jpg"><link rel="apple-touch-icon" href="assets/logo.jpg">
+<title>Sponsoring · El Wakil Immobilier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script><script src="assets/tw.js"></script>
+<link rel="stylesheet" href="assets/app.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="assets/data.js"></script><script src="assets/app.js"></script>
+</head>
+<body>
+<div id="page">
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Sponsoring WhatsApp</h1>
+      <p class="text-sm text-slate-500 mt-1">Budgets publicitaires par agent et retour sur investissement réel.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2"><select id="month" class="field !w-auto font-medium"></select></div>
+  </div>
+
+  <div id="kpis" class="mt-6 grid grid-cols-2 xl:grid-cols-4 gap-4"></div>
+
+  <div class="mt-6 grid grid-cols-1 gap-4">
+    <div class="card overflow-hidden">
+      <div class="px-5 pt-5 pb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100">
+        <div><h3 class="font-semibold text-slate-900">Budgets du mois</h3><p class="text-sm text-slate-500">Saisissez le montant dépensé en dollars : la conversion et le ROI sont calculés automatiquement.</p></div>
+        <div class="flex items-center gap-2 text-sm">
+          <span class="text-slate-500">1 $ =</span><input id="rate" type="number" class="field !w-20 !py-1 tnum text-right"><span class="text-slate-500">DA</span>
+          <span class="text-slate-300 mx-1">·</span><span class="text-slate-500">frais</span><input id="fee" type="number" class="field !w-16 !py-1 tnum text-right"><span class="text-slate-500">%</span>
+        </div>
+      </div>
+      <div class="overflow-x-auto thin-scroll"><table class="tbl m-stack"><thead><tr><th>Agent</th><th class="num">Budget ($)</th><th class="num">Coût réel (DA)</th><th class="num">RDV</th><th class="num">Coût / RDV</th><th class="num">CA généré</th><th class="num">Net</th><th>Verdict</th></tr></thead><tbody id="rows"></tbody></table></div>
+      <div class="px-5 py-3 border-t border-slate-100 flex items-center justify-between bg-slate-50/60" data-perm="sponsoring.manage">
+        <p class="text-xs text-slate-500" id="dirty">Modifiez un montant pour voir l'impact en direct.</p>
+        <button id="save" class="btn btn-primary"><i data-lucide="save"></i> Enregistrer les budgets</button>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <div class="card p-5">
+        <h3 class="font-semibold text-slate-900">Dépense vs chiffre d'affaires</h3><p class="text-sm text-slate-500">Par agent sponsorisé, en DA</p>
+        <div class="mt-3 flex items-center gap-4 text-xs text-slate-600"><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-[#b97f00]"></span>Dépense</span><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-[#28589e]"></span>CA généré</span></div>
+        <div class="chart-box h-[280px] mt-3"><canvas id="chart"></canvas></div>
+      </div>
+      <div class="card p-5"><h3 class="font-semibold text-slate-900 flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 text-brand-700"></i> Recommandations</h3><div id="reco" class="mt-3 space-y-2.5"></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+WK.mount({ id: 'sponsoring', title: 'Sponsoring', section: 'Finance', perm: 'sponsoring.view', help: 'sponsoring' }, () => {
+  const { $, $$, fmt, can, agentStats, sponsoring, settings, store, sum, avatar, badge, icon, C, toast, audit, CUR_MONTH } = WK;
+  const manage = can('sponsoring.manage');
+  $('#month').innerHTML = ['2026-11', '2026-10', '2026-09'].map(m => `<option value="${m}">${WK.fmt.month(m)}</option>`).join('');
+  let draft = {}, chart;
+  const s0 = settings(); let rate = s0.tauxUSD, fee = s0.fraisSponsoring;
+  $('#rate').value = rate; $('#fee').value = fee;
+  if (!manage) { $('#rate').disabled = $('#fee').disabled = true; }
+
+  function stats() {
+    const m = $('#month').value, sp = Object.assign({}, sponsoring(m), draft);
+    return agentStats(m).map(a => {
+      const usd = +sp[a.nom] || 0, spons = usd * (1 + fee / 100) * rate;
+      const net = a.ca - a.charges - a.salaire - spons;
+      return { ...a, usd, spons, net, roi: spons ? net / spons : null };
+    }).filter(a => a.type === 'whatsapp' || a.usd);
+  }
+  function verdict(a) {
+    if (!a.usd) return badge('Pas de budget', 'gray');
+    if (!a.rdv) return badge('Suspendre', 'red', 'octagon-x');
+    if (a.net < 0) return badge('À surveiller', 'amber', 'alert-triangle');
+    return badge('Rentable', 'green', 'check-circle-2');
+  }
+
+  function render(keepInputs) {
+    const S = stats(), sp = S.filter(a => a.usd);
+    const dep = sum(sp, 'spons'), ca = sum(sp, 'ca'), rdv = sum(sp, 'rdv'), net = sum(sp, 'net');
+    const k = (l, v, sub, ic, cls = '') => `<div class="card px-5 py-4"><div class="flex items-center gap-2 text-xs font-medium text-slate-500">${icon(ic, 'w-4 h-4')}${l}</div><p class="mt-2 text-xl font-semibold tnum ${cls || 'text-slate-900'}">${v}</p><p class="text-xs text-slate-400 mt-0.5">${sub}</p></div>`;
+    $('#kpis').innerHTML = [
+      k('Budget dépensé', fmt.money(dep), `${fmt.n(sum(sp, 'usd'))} $ sur ${sp.length} agents`, 'megaphone'),
+      k('RDV générés', rdv, `${sp.filter(a => a.rdv).length} agents sur ${sp.length} ont produit`, 'calendar-check'),
+      k('Coût par RDV', rdv ? fmt.money(dep / rdv) : '∞', 'budget ÷ rendez-vous', 'target'),
+      k('ROI sponsoring', dep ? fmt.pct(net / dep) : '—', `net ${fmt.signed(net)}`, 'trending-up', net < 0 ? 'text-red-600' : 'text-emerald-700'),
+    ].join('');
+
+    if (!keepInputs) $('#rows').innerHTML = S.map(a => `<tr data-a="${a.nom}">
+      <td><div class="flex items-center gap-2.5">${avatar(a.nom, 'w-8 h-8 text-xs')}<div><p class="font-medium text-slate-800">${a.nom}</p><p class="text-2xs text-slate-500">${a.type === 'interne' ? 'Interne' : 'WhatsApp'}</p></div></div></td>
+      <td class="num"><div class="relative inline-block"><span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span><input data-usd="${a.nom}" type="number" min="0" value="${a.usd || ''}" placeholder="0" ${manage ? '' : 'disabled'} class="field !w-24 !py-1 !pl-6 text-right tnum disabled:bg-slate-50"></div></td>
+      <td class="num c-spons"></td><td class="num c-rdv"></td><td class="num c-cpr"></td><td class="num c-ca"></td><td class="num c-net"></td><td class="c-v"></td></tr>`).join('');
+    S.forEach(a => {
+      const tr = $(`tr[data-a="${a.nom}"]`); if (!tr) return;
+      tr.querySelector('.c-spons').textContent = a.spons ? fmt.n(a.spons) : '—';
+      tr.querySelector('.c-rdv').innerHTML = a.rdv || '<span class="text-red-500 font-medium">0</span>';
+      tr.querySelector('.c-cpr').textContent = a.usd ? (a.rdv ? fmt.n(a.spons / a.rdv) : '∞') : '—';
+      tr.querySelector('.c-ca').textContent = fmt.n(a.ca);
+      tr.querySelector('.c-net').innerHTML = `<span class="font-semibold ${a.net < 0 ? 'text-red-600' : 'text-emerald-700'}">${fmt.signed(a.net)}</span>`.replace('<span class="font-semibold', '<span class="whitespace-nowrap font-semibold');
+      tr.querySelector('.c-v').innerHTML = verdict(a);
+    });
+
+    const zero = sp.filter(a => !a.rdv), watch = sp.filter(a => a.rdv && a.net < 0), good = sp.filter(a => a.net >= 0);
+    const item = (ic, cls, t, d) => `<div class="flex gap-3 rounded-lg p-3 ${cls}"><span class="shrink-0 mt-0.5">${icon(ic, 'w-4 h-4')}</span><div class="text-sm"><p class="font-medium">${t}</p><p class="opacity-80 text-xs mt-0.5">${d}</p></div></div>`;
+    $('#reco').innerHTML = [
+      zero.length ? item('octagon-x', 'bg-red-50 text-red-800', `Suspendre ${zero.length} campagne${zero.length > 1 ? 's' : ''}`, `${zero.map(a => a.nom).join(', ')} : ${fmt.da(sum(zero, 'spons'))} dépensés, aucun RDV.`) : '',
+      watch.length ? item('alert-triangle', 'bg-amber-50 text-amber-900', 'Réduire le budget', `${watch.map(a => a.nom).join(', ')} : des RDV, mais le coût dépasse ce qu'ils rapportent.`) : '',
+      good.length ? item('check-circle-2', 'bg-emerald-50 text-emerald-800', 'Augmenter le budget', `${good.map(a => a.nom).join(', ')} : sponsoring rentable (${good.map(a => fmt.pct(a.roi)).join(', ')}).`) : '',
+      dep ? item('info', 'bg-slate-50 text-slate-700', 'Économie potentielle', `En coupant les campagnes sans RDV : ${fmt.da(sum(zero, 'spons'))} / mois, soit ${fmt.da(sum(zero, 'spons') * 12)} / an.`) : '',
+    ].join('') || '<p class="text-sm text-slate-500">Saisissez des budgets pour obtenir des recommandations.</p>';
+
+    chart && chart.destroy();
+    chart = new Chart($('#chart'), { type: 'bar', data: { labels: sp.map(a => a.nom), datasets: [
+      { label: 'Dépense', data: sp.map(a => a.spons), backgroundColor: C.s2, maxBarThickness: 14 },
+      { label: 'CA généré', data: sp.map(a => a.ca), backgroundColor: C.s1, maxBarThickness: 14 }] },
+      options: { scales: { x: { grid: { display: false }, ticks: { font: { size: 11 } } }, y: { ticks: { callback: v => fmt.n(v), maxTicksLimit: 5 } } }, plugins: { tooltip: { callbacks: { label: i => ` ${i.dataset.label} : ${fmt.da(i.raw)}` } } } } });
+    WK.refreshIcons();
+  }
+
+  $('#rows').addEventListener('input', e => { const i = e.target.closest('[data-usd]'); if (!i) return; draft[i.dataset.usd] = +i.value || 0; $('#dirty').classList.add('text-amber-700'); $('#dirty').textContent = 'Modifications non enregistrées.'; render(true); });
+  $('#rate').oninput = () => { rate = +$('#rate').value || 0; render(true); };
+  $('#fee').oninput = () => { fee = +$('#fee').value || 0; render(true); };
+  $('#month').onchange = () => { draft = {}; render(); };
+  $('#save') && ($('#save').onclick = () => {
+    const m = $('#month').value, all = store.get('sponsoring', {});
+    all[m] = Object.assign({}, all[m] || {}, draft); store.set('sponsoring', all);
+    store.set('settings', Object.assign(store.get('settings', {}), { tauxUSD: rate, fraisSponsoring: fee }));
+    audit('Sponsoring', `Budgets de ${fmt.month(m)} mis à jour`); draft = {}; $('#dirty').classList.remove('text-amber-700'); $('#dirty').textContent = 'Budgets enregistrés.';
+    toast('Budgets enregistrés · performance des agents recalculée');
+  });
+  render();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,606 @@
+:root { --surface: #ffffff; --bg: #f7f7f5; }
+html { -webkit-font-smoothing: antialiased; }
+body { background: var(--bg); font-feature-settings: 'cv11', 'ss01'; }
+::selection { background: #fde047; color: #111827; }
+.logo-img { border-radius: 9999px; object-fit: cover; box-shadow: 0 0 0 1px rgba(250,204,21,.45); }
+.tnum { font-variant-numeric: tabular-nums; }
+[x-cloak], .is-hidden { display: none !important; }
+
+/* Scrollbars */
+.thin-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.thin-scroll::-webkit-scrollbar-thumb { background: #d6dbe3; border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+.side-scroll::-webkit-scrollbar { width: 6px; }
+.side-scroll::-webkit-scrollbar-thumb { background: #22314d; border-radius: 6px; }
+
+/* Nav */
+.nav-link { display: flex; align-items: center; gap: .75rem; padding: .5rem .75rem; border-radius: .5rem; color: #a9b5c9; font-size: 14px; font-weight: 500; transition: background .15s, color .15s; }
+.nav-link:hover { background: rgba(255,255,255,.05); color: #fff; }
+.nav-link.active { background: linear-gradient(90deg, rgba(234,179,8,.20), rgba(234,179,8,.04)); color: #fff; box-shadow: inset 2px 0 0 #facc15; }
+.nav-link svg { width: 18px; height: 18px; stroke-width: 1.75; }
+.nav-link.active svg { color: #facc15; }
+.nav-link.locked { opacity: .45; }
+
+/* Inputs */
+.field { width: 100%; border-radius: .5rem; border: 1px solid #dfe3ea; background: #fff; padding: .5rem .75rem; font-size: 14px; color: #0f172a; transition: border-color .15s, box-shadow .15s; }
+.field:focus { outline: none; border-color: #eab308; box-shadow: 0 0 0 3px rgba(234,179,8,.22); }
+.field::placeholder { color: #94a3b8; }
+select.field { appearance: none; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.6' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right .5rem center; background-repeat: no-repeat; background-size: 1.25em; padding-right: 2rem; }
+.label { display: block; font-size: 13px; font-weight: 500; color: #334155; margin-bottom: .375rem; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: .5rem; padding: .5rem .875rem; font-size: 14px; font-weight: 500; transition: all .15s; white-space: nowrap; }
+.btn svg { width: 16px; height: 16px; }
+.btn-primary { background: #eab308; color: #111827; font-weight: 600; box-shadow: 0 1px 2px rgba(16,24,40,.12), inset 0 1px 0 rgba(255,255,255,.25); }
+.btn-primary:hover { background: #facc15; }
+.btn-primary:active { background: #ca8a04; }
+.btn-secondary { background: #fff; color: #1e293b; border: 1px solid #dfe3ea; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+.btn-secondary:hover { background: #f8fafc; border-color: #cbd2dc; }
+.btn-ghost { color: #475569; }
+.btn-ghost:hover { background: #f1f5f9; color: #0f172a; }
+.btn-danger { background: #fff; color: #c0302f; border: 1px solid #f3c4c4; }
+.btn-danger:hover { background: #fdf2f2; }
+
+/* Cards & tables */
+.card { background: #fff; border-radius: .875rem; border: 1px solid #e7eaf0; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+.tbl { width: 100%; font-size: 14px; }
+.tbl thead th { position: sticky; top: 0; background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 500; text-align: left; padding: .625rem 1rem; border-bottom: 1px solid #e7eaf0; white-space: nowrap; z-index: 1; }
+.tbl tbody td { padding: .75rem 1rem; border-bottom: 1px solid #f0f2f6; color: #334155; vertical-align: middle; }
+.tbl tbody tr { transition: background .1s; }
+.tbl tbody tr:hover { background: #f8fafc; }
+.tbl tbody tr:last-child td { border-bottom: 0; }
+.tbl th.num, .tbl td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.th-sort { cursor: pointer; user-select: none; }
+.th-sort:hover { color: #0f172a; }
+
+/* Toggle */
+.switch { position: relative; width: 36px; height: 20px; border-radius: 999px; background: #d6dbe3; transition: background .15s; flex-shrink: 0; cursor: pointer; }
+.switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 999px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .15s; }
+.switch.on { background: #eab308; }
+.switch.on::after { transform: translateX(16px); }
+.switch.disabled { opacity: .5; cursor: not-allowed; }
+
+/* Drawer / modal */
+.overlay { position: fixed; inset: 0; background: rgba(8,16,31,.45); backdrop-filter: blur(2px); opacity: 0; transition: opacity .2s; z-index: 60; }
+.overlay.show { opacity: 1; }
+.drawer { position: fixed; top: 0; right: 0; height: 100%; width: min(560px, 100%); background: #fff; z-index: 61; transform: translateX(100%); transition: transform .25s cubic-bezier(.2,.8,.2,1); display: flex; flex-direction: column; box-shadow: -12px 0 40px rgba(16,24,40,.15); }
+.drawer.show { transform: none; }
+.modal { position: fixed; left: 50%; top: 50%; width: min(var(--w, 560px), calc(100% - 2rem)); max-height: calc(100% - 3rem); overflow: auto; background: #fff; z-index: 61; border-radius: 1rem; transform: translate(-50%, -46%) scale(.98); opacity: 0; transition: all .2s cubic-bezier(.2,.8,.2,1); box-shadow: 0 24px 60px -12px rgba(16,24,40,.35); }
+.modal.show { transform: translate(-50%, -50%); opacity: 1; }
+
+/* Dropdown */
+.menu { position: absolute; z-index: 50; min-width: 220px; background: #fff; border: 1px solid #e7eaf0; border-radius: .75rem; box-shadow: 0 12px 32px -8px rgba(16,24,40,.18); padding: .375rem; opacity: 0; transform: translateY(-4px); pointer-events: none; transition: all .15s; }
+.menu.show { opacity: 1; transform: none; pointer-events: auto; }
+.menu-item { display: flex; align-items: center; gap: .625rem; width: 100%; padding: .5rem .625rem; border-radius: .5rem; font-size: 14px; color: #334155; text-align: left; }
+.menu-item:hover { background: #f1f5f9; color: #0f172a; }
+.menu-item svg { width: 16px; height: 16px; color: #64748b; }
+
+/* Toast */
+#toasts { position: fixed; bottom: 1.25rem; right: 1.25rem; z-index: 80; display: flex; flex-direction: column; gap: .5rem; }
+.toast { display: flex; align-items: center; gap: .625rem; background: #0d1729; color: #fff; padding: .75rem 1rem; border-radius: .75rem; font-size: 14px; box-shadow: 0 12px 32px -8px rgba(0,0,0,.35); animation: toastIn .25s cubic-bezier(.2,.8,.2,1); }
+.toast svg { width: 18px; height: 18px; color: #4ade80; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* Charts */
+.chart-box { position: relative; width: 100%; }
+.seg { display: inline-flex; background: #f1f4f8; border-radius: .5rem; padding: 3px; gap: 2px; }
+.seg button { padding: .3rem .75rem; font-size: 13px; font-weight: 500; color: #64748b; border-radius: .375rem; transition: all .15s; }
+.seg button.on { background: #fff; color: #0f172a; box-shadow: 0 1px 2px rgba(16,24,40,.1); }
+
+.fade-in { animation: fadeIn .35s ease both; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+@media print {
+  aside, header, .no-print { display: none !important; }
+  body:has(#wk-panel) > *:not(#wk-panel) { display: none !important; }
+  #wk-panel { position: static !important; transform: none !important; box-shadow: none !important; width: 100% !important; max-height: none !important; opacity: 1 !important; }
+  main { padding: 0 !important; margin: 0 !important; }
+  body { background: #fff; }
+}
+
+/* ── Responsive ── */
+.seg { flex-wrap: wrap; max-width: 100%; }
+@media (max-width: 640px) {
+  .tbl thead th, .tbl tbody td { padding-left: .75rem; padding-right: .75rem; }
+  .card.p-5, .card.p-6 { padding: 1rem; }
+  .btn { padding: .5rem .75rem; }
+  h1.text-2xl { font-size: 1.375rem; }
+  #toasts { left: 1rem; right: 1rem; bottom: 1rem; }
+  .modal { width: calc(100% - 1.5rem); max-height: calc(100% - 1.5rem); }
+}
+
+/* ════════ Mobile ════════ */
+/* Barre de navigation basse (style application) */
+.bnav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; display: flex; align-items: flex-end; justify-content: space-around;
+  padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); background: rgba(255,255,255,.94); backdrop-filter: blur(12px);
+  border-top: 1px solid #e7eaf0; box-shadow: 0 -6px 24px -12px rgba(16,24,40,.18); }
+.bnav-item { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0 4px; min-height: 52px;
+  font-size: 11px; font-weight: 500; color: #64748b; border-radius: 12px; -webkit-tap-highlight-color: transparent; }
+.bnav-item.on { color: #111827; }
+.bnav-item.on svg { color: #ca8a04; }
+.bnav-item.on::before { content: ''; position: absolute; top: -7px; width: 28px; height: 3px; border-radius: 0 0 3px 3px; background: #eab308; }
+.bnav-item:active { background: #f1f5f9; }
+.bnav-badge { position: absolute; top: 2px; left: calc(50% + 6px); min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px; background: #ef4444; color: #fff;
+  font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 2px #fff; }
+.bnav-fab { width: 54px; height: 54px; margin: 0 4px 6px; flex-shrink: 0; border-radius: 18px; background: #eab308; color: #111827; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 20px -6px rgba(202,138,4,.6), inset 0 1px 0 rgba(255,255,255,.35); transform: translateY(-10px); transition: transform .15s; -webkit-tap-highlight-color: transparent; }
+.bnav-fab:active { transform: translateY(-8px) scale(.96); }
+.sheet-handle { width: 40px; height: 4px; border-radius: 4px; background: #d6dbe3; margin: 10px auto 6px; }
+
+@media (max-width: 640px) {
+  /* Fenêtres → panneaux qui montent du bas (plus faciles au pouce) */
+  .modal { left: 0; right: 0; top: auto; bottom: 0; width: 100% !important; max-height: 92vh; border-radius: 1.25rem 1.25rem 0 0;
+    transform: translateY(100%); opacity: 1; padding-bottom: env(safe-area-inset-bottom); }
+  .modal.show { transform: translateY(0); }
+  .drawer { width: 100%; border-radius: 0; }
+  .sheet-handle { display: block; }
+  /* Champs : 16px pour éviter le zoom automatique sur iPhone, cibles tactiles plus grandes */
+  .field, select.field, textarea.field { font-size: 16px; padding-top: .625rem; padding-bottom: .625rem; }
+  .btn { min-height: 42px; }
+  .seg button { padding: .45rem .8rem; }
+  #toasts { bottom: calc(88px + env(safe-area-inset-bottom)); }
+  /* Tableaux larges → cartes empilées */
+  .tbl.m-stack thead { display: none; }
+  .tbl.m-stack, .tbl.m-stack tbody, .tbl.m-stack tfoot { display: block; width: 100%; }
+  .tbl.m-stack tr { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem 1rem; padding: .9rem 1rem; border-bottom: 1px solid #eef1f5; }
+  .tbl.m-stack td { display: flex; flex-direction: column; gap: 2px; padding: 0 !important; border: 0 !important; text-align: left !important; min-width: 0; }
+  .tbl.m-stack td::before { content: attr(data-label); font-size: 11px; line-height: 14px; font-weight: 500; color: #94a3b8; }
+  .tbl.m-stack td:first-child { grid-column: 1 / -1; }
+  .tbl.m-stack td:first-child::before, .tbl.m-stack td[data-label=""]::before { display: none; }
+  .tbl.m-stack td[data-label=""] { grid-column: 1 / -1; align-items: stretch; }
+  .tbl.m-stack td[data-label=""]:empty { display: none; }
+  .tbl.m-stack td[colspan] { grid-column: 1 / -1; }
+  .tbl.m-stack tfoot tr { background: #f8fafc; }
+  .tbl.m-stack td.num { align-items: flex-start; }
+  /* Listes mobiles dédiées */
+  .m-only { display: block; }
+  .d-only { display: none !important; }
+}
+@media (min-width: 641px) { .m-only { display: none !important; } }
+
+/* ════════ Dark mode (html.dark) — généré par tools ════════ */
+html.dark { color-scheme: dark; --bg: #0b0f17; }
+html.dark body, html.dark body.bg-white { background: #0b0f17; }
+html.dark .card { background: #141a26; border-color: #273142; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+html.dark .field { background: #0f1520; border-color: #2a3446; color: #e5e7eb; }
+html.dark .field:disabled { background: #1a2130; color: #8b96a8; }
+html.dark .field::placeholder { color: #5f6b7e; }
+html.dark .label { color: #cbd5e1; }
+html.dark .tbl thead th { background: #171e2c; color: #8b96a8; border-color: #273142; }
+html.dark .tbl tbody td { border-color: #1e2635; color: #cbd5e1; }
+html.dark .tbl tbody tr:hover { background: #182031; }
+html.dark .btn-secondary { background: #182032; color: #e2e8f0; border-color: #2a3446; }
+html.dark .btn-secondary:hover { background: #1f2a3e; border-color: #3a4659; }
+html.dark .btn-ghost { color: #a3b0c2; }
+html.dark .btn-ghost:hover { background: #1f2838; color: #fff; }
+html.dark .btn-danger { background: transparent; color: #f87171; border-color: rgba(239,68,68,.35); }
+html.dark .btn-danger:hover { background: rgba(239,68,68,.1); }
+html.dark .menu { background: #141a26; border-color: #273142; box-shadow: 0 16px 40px -8px rgba(0,0,0,.6); }
+html.dark .menu-item { color: #cbd5e1; }
+html.dark .menu-item:hover { background: #1f2838; color: #fff; }
+html.dark .modal, html.dark .drawer { background: #141a26; }
+html.dark .overlay { background: rgba(0,0,0,.6); }
+html.dark .seg { background: #1b2333; }
+html.dark .seg button { color: #8b96a8; }
+html.dark .seg button.on { background: #2c3749; color: #fff; box-shadow: none; }
+html.dark .switch { background: #374151; }
+html.dark .switch.on { background: #eab308; }
+html.dark kbd { background: #1a2130 !important; border-color: #374357 !important; color: #a3b0c2 !important; }
+html.dark .thin-scroll::-webkit-scrollbar-thumb { background: #2f3a4d; }
+html.dark header.bg-white\/85 { background: rgba(14,19,29,.85); border-color: #273142; }
+html.dark ::selection { background: #a16207; color: #fff; }
+html.dark mark { background: #a16207; color: #fff; }
+html.dark .bnav { background: rgba(14,19,29,.94); border-color: #273142; box-shadow: 0 -6px 24px -12px rgba(0,0,0,.6); }
+html.dark .bnav-item { color: #8b96a8; }
+html.dark .bnav-item.on { color: #fff; }
+html.dark .bnav-item.on svg { color: #facc15; }
+html.dark .bnav-item:active { background: #1f2838; }
+html.dark .bnav-badge { box-shadow: 0 0 0 2px #0e131d; }
+html.dark .sheet-handle { background: #374357; }
+@media (max-width: 640px) { html.dark .tbl.m-stack tr { border-color: #1e2635; } html.dark .tbl.m-stack tfoot tr { background: #171e2c; } }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-white:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-white\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!bg-slate-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: #141a26 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-slate-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-slate-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-slate-50\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: #1a2130 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-slate-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: #222b3b !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-slate-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: #2a3446 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-white:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-slate-50:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-slate-50\/60:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-slate-100:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: #1f2838 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-slate-200:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: #2f3a4e !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-slate-900:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-slate-900:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #f3f4f6 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-slate-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-slate-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #e5e7eb !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-slate-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-slate-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #cbd5e1 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-slate-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-slate-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #aab4c3 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-slate-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-slate-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #8b96a8 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-slate-400:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-slate-400:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #6f7a8c !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-slate-300:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-slate-300:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #4b5567 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-slate-900:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-slate-800:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-slate-600:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #fff !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-slate-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-slate-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-slate-200\/80:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!border-slate-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .divide-slate-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { border-color: #273142 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .divide-slate-100 > :not([hidden]) ~ :not([hidden]):not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { border-color: #273142 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-slate-300:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:border-slate-300:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { border-color: #374357 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-slate-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-ring-color: #273142 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-white:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-ring-color: #141a26 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .from-slate-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-gradient-from: #1a2130 var(--tw-gradient-from-position) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .to-white:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-gradient-to: rgba(0,0,0,0) var(--tw-gradient-to-position) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-emerald-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(16,185,129,.12) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-emerald-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(16,185,129,.18) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-emerald-50\/30:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-emerald-50\/40:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-emerald-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-emerald-50\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!bg-emerald-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-emerald-50:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-emerald-50\/40:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-emerald-50\/30:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(16,185,129,.09) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-emerald-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-emerald-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-emerald-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-emerald-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-emerald-900:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-emerald-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-emerald-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-emerald-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-emerald-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-emerald-900\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-emerald-800\/80:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-emerald-800:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-emerald-500:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #6ee7b7 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-emerald-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-emerald-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-ring-color: rgba(16,185,129,.3) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-emerald-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-emerald-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-emerald-300:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!border-emerald-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { border-color: rgba(16,185,129,.35) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .from-emerald-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-gradient-from: rgba(16,185,129,.10) var(--tw-gradient-from-position) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-red-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(239,68,68,.12) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-red-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(239,68,68,.18) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-red-50\/30:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-red-50\/40:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-red-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-red-50\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!bg-red-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-red-50:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-red-50\/40:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-red-50\/30:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(239,68,68,.09) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-red-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-red-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-red-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-red-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-red-900:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-red-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-red-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-red-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-red-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-red-900\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-red-800\/80:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-red-800:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-red-500:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #fca5a5 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-red-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-red-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-ring-color: rgba(239,68,68,.3) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-red-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-red-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-red-300:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!border-red-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { border-color: rgba(239,68,68,.35) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .from-red-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-gradient-from: rgba(239,68,68,.10) var(--tw-gradient-from-position) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-amber-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(245,158,11,.12) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-amber-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(245,158,11,.18) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-amber-50\/30:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-amber-50\/40:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-amber-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-amber-50\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!bg-amber-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-amber-50:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-amber-50\/40:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-amber-50\/30:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(245,158,11,.09) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-amber-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-amber-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-amber-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-amber-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-amber-900:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-amber-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-amber-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-amber-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-amber-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-amber-900\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-amber-800\/80:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-amber-800:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-amber-500:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #fcd34d !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-amber-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-amber-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-ring-color: rgba(245,158,11,.3) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-amber-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-amber-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-amber-300:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!border-amber-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { border-color: rgba(245,158,11,.35) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .from-amber-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-gradient-from: rgba(245,158,11,.10) var(--tw-gradient-from-position) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-violet-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(139,92,246,.12) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-violet-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(139,92,246,.18) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-violet-50\/30:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-violet-50\/40:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-violet-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-violet-50\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!bg-violet-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-violet-50:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-violet-50\/40:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-violet-50\/30:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(139,92,246,.09) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-violet-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-violet-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-violet-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-violet-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-violet-900:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-violet-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-violet-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-violet-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-violet-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-violet-900\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-violet-800\/80:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-violet-800:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-violet-500:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #c4b5fd !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-violet-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-violet-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-ring-color: rgba(139,92,246,.3) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-violet-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-violet-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-violet-300:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!border-violet-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { border-color: rgba(139,92,246,.35) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .from-violet-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-gradient-from: rgba(139,92,246,.10) var(--tw-gradient-from-position) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-sky-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(14,165,233,.12) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-sky-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(14,165,233,.18) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-sky-50\/30:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-sky-50\/40:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-sky-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-sky-50\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!bg-sky-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-sky-50:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-sky-50\/40:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-sky-50\/30:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(14,165,233,.09) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-sky-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-sky-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-sky-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-sky-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-sky-900:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-sky-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-sky-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-sky-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-sky-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-sky-900\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-sky-800\/80:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-sky-800:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-sky-500:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #7dd3fc !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-sky-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-sky-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-ring-color: rgba(14,165,233,.3) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-sky-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-sky-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-sky-300:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!border-sky-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { border-color: rgba(14,165,233,.35) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .from-sky-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-gradient-from: rgba(14,165,233,.10) var(--tw-gradient-from-position) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-brand-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(234,179,8,.12) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-brand-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(234,179,8,.18) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-brand-50\/30:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-brand-50\/40:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-brand-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-brand-50\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!bg-brand-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-brand-50:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-brand-50\/40:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-brand-50\/30:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(234,179,8,.09) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-brand-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-brand-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-brand-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-brand-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-brand-900:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-brand-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-brand-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-brand-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-brand-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-brand-900\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-brand-800\/80:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-brand-800:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-brand-500:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #facc15 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-brand-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-brand-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-ring-color: rgba(234,179,8,.3) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-brand-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-brand-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-brand-300:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!border-brand-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { border-color: rgba(234,179,8,.35) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .from-brand-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-gradient-from: rgba(234,179,8,.10) var(--tw-gradient-from-position) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-rose-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(244,63,94,.12) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-rose-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(244,63,94,.18) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-rose-50\/30:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-rose-50\/40:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-rose-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-rose-50\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!bg-rose-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-rose-50:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-rose-50\/40:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-rose-50\/30:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(244,63,94,.09) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-rose-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-rose-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-rose-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-rose-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-rose-900:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-rose-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-rose-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-rose-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-rose-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-rose-900\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-rose-800\/80:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-rose-800:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-rose-500:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #fda4af !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-rose-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-rose-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-ring-color: rgba(244,63,94,.3) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-rose-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-rose-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-rose-300:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!border-rose-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { border-color: rgba(244,63,94,.35) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .from-rose-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-gradient-from: rgba(244,63,94,.10) var(--tw-gradient-from-position) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-teal-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(20,184,166,.12) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-teal-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(20,184,166,.18) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-teal-50\/30:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-teal-50\/40:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-teal-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-teal-50\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!bg-teal-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-teal-50:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-teal-50\/40:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-teal-50\/30:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(20,184,166,.09) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-teal-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-teal-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-teal-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-teal-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-teal-900:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-teal-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-teal-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-teal-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-teal-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-teal-900\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-teal-800\/80:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-teal-800:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-teal-500:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #5eead4 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-teal-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-teal-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-ring-color: rgba(20,184,166,.3) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-teal-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-teal-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-teal-300:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!border-teal-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { border-color: rgba(20,184,166,.35) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .from-teal-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-gradient-from: rgba(20,184,166,.10) var(--tw-gradient-from-position) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-orange-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(249,115,22,.12) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-orange-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(249,115,22,.18) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-orange-50\/30:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-orange-50\/40:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-orange-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-orange-50\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!bg-orange-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-orange-50:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-orange-50\/40:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-orange-50\/30:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(249,115,22,.09) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-orange-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-orange-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-orange-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-orange-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-orange-900:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-orange-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-orange-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-orange-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-orange-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-orange-900\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-orange-800\/80:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-orange-800:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-orange-500:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #fdba74 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-orange-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-orange-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-ring-color: rgba(249,115,22,.3) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-orange-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-orange-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-orange-300:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!border-orange-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { border-color: rgba(249,115,22,.35) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .from-orange-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-gradient-from: rgba(249,115,22,.10) var(--tw-gradient-from-position) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-indigo-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(99,102,241,.12) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-indigo-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(99,102,241,.18) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-indigo-50\/30:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-indigo-50\/40:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-indigo-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-indigo-50\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!bg-indigo-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-indigo-50:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-indigo-50\/40:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-indigo-50\/30:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(99,102,241,.09) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-indigo-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-indigo-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-indigo-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-indigo-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-indigo-900:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-indigo-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-indigo-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-indigo-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-indigo-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-indigo-900\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-indigo-800\/80:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-indigo-800:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-indigo-500:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #a5b4fc !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-indigo-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-indigo-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-ring-color: rgba(99,102,241,.3) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-indigo-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-indigo-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-indigo-300:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!border-indigo-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { border-color: rgba(99,102,241,.35) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .from-indigo-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-gradient-from: rgba(99,102,241,.10) var(--tw-gradient-from-position) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-fuchsia-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(217,70,239,.12) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-fuchsia-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(217,70,239,.18) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-fuchsia-50\/30:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-fuchsia-50\/40:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-fuchsia-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-fuchsia-50\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!bg-fuchsia-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-fuchsia-50:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-fuchsia-50\/40:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-fuchsia-50\/30:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(217,70,239,.09) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-fuchsia-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-fuchsia-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-fuchsia-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-fuchsia-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-fuchsia-900:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-fuchsia-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-fuchsia-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-fuchsia-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-fuchsia-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-fuchsia-900\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-fuchsia-800\/80:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-fuchsia-800:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-fuchsia-500:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #f0abfc !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-fuchsia-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-fuchsia-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-ring-color: rgba(217,70,239,.3) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-fuchsia-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-fuchsia-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-fuchsia-300:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!border-fuchsia-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { border-color: rgba(217,70,239,.35) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .from-fuchsia-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-gradient-from: rgba(217,70,239,.10) var(--tw-gradient-from-position) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-lime-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(132,204,22,.12) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-lime-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(132,204,22,.18) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-lime-50\/30:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-lime-50\/40:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-lime-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .bg-lime-50\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!bg-lime-50\/60:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-lime-50:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-lime-50\/40:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:bg-lime-50\/30:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { background-color: rgba(132,204,22,.09) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-lime-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-lime-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-lime-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-lime-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-lime-900:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-lime-500:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-lime-600:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-lime-700:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!text-lime-800:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-lime-900\/70:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .text-lime-800\/80:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-lime-800:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .hover\:text-lime-500:hover:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { color: #bef264 !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-lime-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .ring-lime-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-ring-color: rgba(132,204,22,.3) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-lime-100:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-lime-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .border-lime-300:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *),
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .\!border-lime-200:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { border-color: rgba(132,204,22,.35) !important; }
+html.dark :is(main, header, .modal, .drawer, .menu, .light-zone) .from-lime-50:not(:is(.bg-night-800, .bg-night-900, .bg-night-950, .bg-slate-900, [class*="from-night"]) *) { --tw-gradient-from: rgba(132,204,22,.10) var(--tw-gradient-from-position) !important; --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important; }
+html.dark .peer:checked ~ .peer-checked\:bg-brand-50 { background-color: rgba(234,179,8,.14); }
+html.dark .peer:checked ~ .peer-checked\:text-brand-800 { color: #facc15; }
+html.dark .group:hover .group-hover\:text-brand-700 { color: #facc15; }
+html.dark main .bg-night-900:not(aside *), html.dark .modal .bg-night-900 { background-color: #0a0d14; }
+html.dark .hover\:bg-night-800:hover { background-color: #1a2130; }

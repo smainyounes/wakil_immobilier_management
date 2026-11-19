@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="icon" href="assets/logo.jpg"><link rel="apple-touch-icon" href="assets/logo.jpg">
+<title>Tableau de bord · El Wakil Immobilier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script><script src="assets/tw.js"></script>
+<link rel="stylesheet" href="assets/app.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="assets/data.js"></script><script src="assets/app.js"></script>
+</head>
+<body>
+<div id="page">
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900" id="hello">Bonjour</h1>
+      <p class="text-sm text-slate-500 mt-1" id="sub"></p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <select id="month" class="field !w-auto !py-1.5 font-medium"></select>
+      <a href="rdv.html?new=1" data-perm="rdv.create" class="btn btn-primary hidden sm:inline-flex"><i data-lucide="plus"></i> Nouveau RDV</a>
+    </div>
+  </div>
+
+  <!-- Anomalies -->
+  <!-- <div id="anomalies" data-perm="finance.view" class="mt-6 rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-white p-4 flex flex-col md:flex-row md:items-center gap-4">
+    <span class="hidden md:flex w-10 h-10 rounded-lg bg-amber-100 text-amber-700 items-center justify-center shrink-0"><i data-lucide="file-warning" class="w-5 h-5"></i></span>
+    <div class="flex-1">
+      <p class="text-sm font-semibold text-amber-900">4 anomalies détectées dans le fichier Excel actuel</p>
+      <p class="text-sm text-amber-800/80 mt-0.5">En novembre, <b id="gapTxt"></b> ne sont pas comptés dans les salaires ni dans le résultat net. Ici, tous les calculs sont automatiques.</p>
+    </div>
+    <button id="seeAnom" class="btn btn-secondary !border-amber-200 shrink-0">Voir le détail <i data-lucide="arrow-right"></i></button>
+  </div> -->
+
+  <!-- KPIs -->
+  <div id="kpis" class="mt-6 grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4"></div>
+
+  <!-- Charts row -->
+  <div class="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-4">
+    <div class="card p-5 xl:col-span-2">
+      <div class="flex items-start justify-between gap-4">
+        <div><h3 class="font-semibold text-slate-900" id="trendTitle">Évolution mensuelle</h3><p class="text-sm text-slate-500" id="trendSub">12 derniers mois</p></div>
+        <div class="seg" id="trendSeg"><button data-v="ca" class="on" data-perm="finance.view">Chiffre d'affaires</button><button data-v="rdv">Rendez-vous</button></div>
+      </div>
+      <div class="chart-box h-[290px] mt-4"><canvas id="trend"></canvas></div>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center justify-between"><h3 class="font-semibold text-slate-900">Types de biens</h3><span class="text-xs text-slate-500" id="typesN"></span></div>
+      <div id="types" class="mt-4 space-y-3.5"></div>
+    </div>
+  </div>
+
+  <!-- Lists row -->
+  <div class="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-4">
+    <div class="card xl:col-span-2 overflow-hidden">
+      <div class="flex items-center justify-between px-5 pt-5 pb-3"><div><h3 class="font-semibold text-slate-900">Derniers rendez-vous</h3><p class="text-sm text-slate-500">Saisis par l'équipe</p></div><a href="rdv.html" class="btn btn-ghost !text-brand-700 !px-2">Tout voir <i data-lucide="arrow-right"></i></a></div>
+      <div class="overflow-x-auto"><table class="tbl m-stack"><thead><tr><th>Date</th><th>Bien</th><th>Commercial</th><th>Terrain</th><th class="num">Revenu</th></tr></thead><tbody id="last"></tbody></table></div>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center justify-between"><h3 class="font-semibold text-slate-900">Classement commerciaux</h3><a href="agents.html" data-perm="agents.view" class="text-xs font-medium text-brand-700 hover:underline">Détails</a></div>
+      <p class="text-sm text-slate-500">Rendez-vous apportés ce mois</p>
+      <ol id="leader" class="mt-4 space-y-3"></ol>
+    </div>
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+    <div class="card p-5">
+      <h3 class="font-semibold text-slate-900">Équipe terrain</h3><p class="text-sm text-slate-500">Visites réalisées ce mois</p>
+      <div id="field" class="mt-4 space-y-3"></div>
+    </div>
+    <div class="card p-5">
+      <h3 class="font-semibold text-slate-900">Wilayas couvertes</h3><p class="text-sm text-slate-500" id="wilSub"></p>
+      <div id="wil" class="mt-4 space-y-2.5"></div>
+    </div>
+    <div class="card p-5">
+      <h3 class="font-semibold text-slate-900">Activité quotidienne</h3><p class="text-sm text-slate-500">Rendez-vous par jour</p>
+      <div class="chart-box h-[200px] mt-4"><canvas id="daily"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<script>
+WK.mount({ id: 'dashboard', title: 'Tableau de bord', section: 'Opérations', perm: 'dashboard.view', help: 'dashboard' }, () => {
+  const { $, fmt, can, rdvs, byMonth, sum, months, monthly, agentStats, missions, avatar, badge, icon, esc, C, TYPE_ICON, delta, CUR_MONTH, currentUser, openPanel, panelHead } = WK;
+  const fin = can('finance.view');
+  $('#gapTxt') && ($('#gapTxt').textContent = `${WK.excelGap().n} rendez-vous (${fmt.da(WK.excelGap().ca)})`);
+  $('#hello').textContent = 'Bonjour, ' + currentUser().nom.split(' ')[0];
+  const sel = $('#month');
+  sel.innerHTML = months().slice().reverse().map(m => `<option value="${m}">${fmt.month(m)}</option>`).join('');
+  let trendMode = fin ? 'ca' : 'rdv';
+  if (!fin) $('#trendSeg').classList.add('is-hidden');
+  let trendChart, dailyChart;
+
+  function prevMonth(m) { const [y, mo] = m.split('-').map(Number); const d = new Date(y, mo - 2, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+
+  function render() {
+    const m = sel.value, all = rdvs();
+    const L = byMonth(all, m);
+    const lastDay = L.reduce((a, r) => r.date > a ? r.date : a, '');
+    const partial = m === CUR_MONTH;
+    const pm = prevMonth(m);
+    const day = lastDay.slice(8);
+    const P = byMonth(all, pm).filter(r => !partial || r.date.slice(8) <= day);
+    const cmp = partial ? `vs 1–${+day} ${fmt.month(pm).split(' ')[0].toLowerCase()}` : 'vs mois précédent';
+    $('#sub').textContent = `Activité de ${fmt.month(m).toLowerCase()}${partial ? ` · données au ${fmt.date(lastDay)}` : ''}`;
+
+    const ca = sum(L, 'revenu'), pca = sum(P, 'revenu');
+    const st = agentStats(m, partial ? {} : {}), net = sum(st, 'net');
+    const pst = agentStats(pm, partial ? { until: pm + '-' + day } : {}), pnet = sum(pst, 'net');
+    const ms = missions(m);
+    const kpi = (label, value, d, hint, ic, tone = 'brand') => `
+      <div class="card p-5">
+        <div class="flex items-start justify-between gap-2"><p class="text-xs sm:text-sm font-medium text-slate-500">${label}</p><span class="hidden sm:flex w-8 h-8 rounded-lg bg-${tone}-50 text-${tone}-600 flex items-center justify-center">${icon(ic)}</span></div>
+        <p class="mt-3 text-lg sm:text-[26px] leading-none font-semibold tracking-tight text-slate-900 tnum">${value}</p>
+        <div class="mt-3 flex flex-wrap items-center gap-x-2 gap-y-0.5">${d}<span class="text-xs text-slate-400">${hint}</span></div>
+      </div>`;
+    const wk = L.filter(r => r.date > (() => { const d = new Date(lastDay); d.setDate(d.getDate() - 7); return d.toISOString().slice(0, 10); })());
+    $('#kpis').innerHTML = fin ? [
+      kpi('Chiffre d\'affaires', fmt.money(ca), delta(ca, pca), cmp, 'banknote'),
+      kpi('Rendez-vous réalisés', L.length, delta(L.length, P.length), cmp, 'calendar-check'),
+      kpi('Résultat commercial net', `<span class="${net < 0 ? 'text-red-600' : ''}">${fmt.money(net)}</span>`, delta(net, pnet), 'après salaires & sponsoring', 'piggy-bank', 'emerald'),
+      kpi('Revenu moyen / RDV', fmt.money(L.length ? ca / L.length : 0), delta(L.length ? ca / L.length : 0, P.length ? pca / P.length : 0), cmp, 'receipt'),
+    ].join('') : [
+      kpi('Rendez-vous du mois', L.length, delta(L.length, P.length), cmp, 'calendar-check'),
+      kpi('7 derniers jours', wk.length, '', 'rendez-vous saisis', 'calendar-clock'),
+      kpi('Missions hors wilaya', ms.length, `<span class="text-xs font-medium text-amber-700">${ms.filter(x => x.statut === 'À valider').length} à valider</span>`, '', 'map-pinned', 'amber'),
+      kpi('Wilayas couvertes', new Set(L.map(r => r.wilaya).filter(w => w !== 'Autre')).size, '', 'ce mois', 'map', 'emerald'),
+    ].join('');
+
+    // Trend
+    const M = monthly();
+    const data = M.map(x => trendMode === 'ca' ? x.ca : x.rdv);
+    const colors = M.map(x => x.m === m ? C.hi : C.soft);
+    $('#trendTitle').textContent = trendMode === 'ca' ? 'Chiffre d\'affaires mensuel' : 'Rendez-vous par mois';
+    const best = M.reduce((a, x) => (trendMode === 'ca' ? x.ca : x.rdv) > (trendMode === 'ca' ? a.ca : a.rdv) ? x : a);
+    $('#trendSub').textContent = `Déc. 2025 → nov. 2026 · record : ${fmt.month(best.m).toLowerCase()} (${trendMode === 'ca' ? fmt.da(best.ca) : best.rdv + ' RDV'})`;
+    trendChart && trendChart.destroy();
+    trendChart = new Chart($('#trend'), {
+      type: 'bar',
+      data: { labels: M.map(x => fmt.monthShort(x.m)), datasets: [{ data, backgroundColor: colors, hoverBackgroundColor: C.hi, maxBarThickness: 38, categoryPercentage: .8, barPercentage: .9 }] },
+      options: {
+        scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => trendMode === 'ca' ? fmt.n(v) : v, maxTicksLimit: 5 } } },
+        plugins: { tooltip: { callbacks: { title: i => fmt.month(M[i[0].dataIndex].m), label: i => trendMode === 'ca' ? ' ' + fmt.da(i.raw) : ' ' + i.raw + ' rendez-vous', afterLabel: i => trendMode === 'ca' ? ` ${M[i.dataIndex].rdv} rendez-vous` : '' } } },
+        onClick: (e, els) => { if (els[0]) { sel.value = M[els[0].index].m; render(); } },
+      },
+    });
+
+    // Types
+    const types = {}; L.forEach(r => types[r.type] = (types[r.type] || 0) + 1);
+    const T = Object.entries(types).sort((a, b) => b[1] - a[1]).slice(0, 6), tmax = T[0] ? T[0][1] : 1;
+    $('#typesN').textContent = L.length + ' biens';
+    $('#types').innerHTML = T.map(([t, n]) => `
+      <div class="group" title="${t} : ${n} rendez-vous">
+        <div class="flex items-center justify-between text-sm"><span class="flex items-center gap-2 text-slate-700">${icon(TYPE_ICON[t] || 'map-pin', 'w-4 h-4 text-slate-400')}${t}</span><span class="tnum text-slate-900 font-medium">${n} <span class="text-slate-400 font-normal">· ${Math.round(n / L.length * 100)} %</span></span></div>
+        <div class="mt-1.5 h-2 rounded-full bg-slate-100 overflow-hidden"><div class="h-full rounded-full bg-brand-500 group-hover:bg-brand-600 transition-all" style="width:${n / tmax * 100}%"></div></div>
+      </div>`).join('');
+
+    // Last RDV
+    $('#last').innerHTML = L.slice().sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id).slice(0, 7).map(r => `
+      <tr><td class="whitespace-nowrap text-slate-500">${fmt.dateShort(r.date)}</td>
+      <td><div class="flex items-center gap-2.5"><span class="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center shrink-0">${icon(TYPE_ICON[r.type] || 'map-pin')}</span><div class="min-w-0"><p class="font-medium text-slate-800 truncate max-w-[220px]">${esc(r.commune)}</p><p class="text-xs text-slate-500">${r.type} · ${r.wilaya}</p></div></div></td>
+      <td><div class="flex items-center gap-2 whitespace-nowrap">${avatar(r.agent)}<span>${esc(r.agent || '—')}</span></div></td>
+      <td class="text-slate-600">${esc(r.terrain || '—')}</td>
+      <td class="num font-medium text-slate-900">${r.revenu ? fmt.n(r.revenu) : '<span class="text-slate-400">—</span>'}</td></tr>`).join('');
+
+    // Leaderboard
+    const byA = {}; L.forEach(r => { if (r.agent) { byA[r.agent] = byA[r.agent] || { n: 0, ca: 0 }; byA[r.agent].n++; byA[r.agent].ca += r.revenu; } });
+    const LB = Object.entries(byA).sort((a, b) => b[1].n - a[1].n).slice(0, 6), lmax = LB[0] ? LB[0][1].n : 1;
+    $('#leader').innerHTML = LB.map(([a, v], i) => `
+      <li class="flex items-center gap-3">
+        <span class="w-5 text-xs font-semibold tnum ${i < 3 ? 'text-brand-700' : 'text-slate-400'}">${i + 1}</span>${avatar(a, 'w-8 h-8 text-xs')}
+        <div class="flex-1 min-w-0"><div class="flex justify-between text-sm"><span class="font-medium text-slate-800">${a}</span><span class="tnum font-semibold text-slate-900">${v.n} <span class="font-normal text-slate-400">RDV</span></span></div>
+        <div class="mt-1 flex items-center gap-2"><div class="flex-1 h-1.5 rounded-full bg-slate-100"><div class="h-full rounded-full bg-brand-500" style="width:${v.n / lmax * 100}%"></div></div>${fin ? `<span class="text-xs text-slate-500 tnum w-24 text-right whitespace-nowrap">${fmt.da(v.ca)}</span>` : ''}</div></div>
+      </li>`).join('') || '<p class="text-sm text-slate-500">Aucune donnée</p>';
+
+    // Field
+    const byF = {}; L.forEach(r => { if (r.terrain) byF[r.terrain] = (byF[r.terrain] || 0) + 1; });
+    const F = Object.entries(byF).sort((a, b) => b[1] - a[1]), fmax = F[0] ? F[0][1] : 1;
+    $('#field').innerHTML = F.map(([a, n]) => `<div class="flex items-center gap-3">${avatar(a, 'w-8 h-8 text-xs')}<div class="flex-1"><div class="flex justify-between text-sm"><span class="font-medium text-slate-800">${a}</span><span class="tnum text-slate-900 font-semibold">${n}</span></div><div class="mt-1 h-1.5 rounded-full bg-slate-100"><div class="h-full rounded-full bg-night-800" style="width:${n / fmax * 100}%"></div></div></div></div>`).join('');
+
+    // Wilayas
+    const W = {}; L.forEach(r => W[r.wilaya] = (W[r.wilaya] || 0) + 1);
+    const WL = Object.entries(W).filter(([w]) => w !== 'Autre').sort((a, b) => b[1] - a[1]);
+    $('#wilSub').textContent = `${WL.length} wilayas ce mois`;
+    $('#wil').innerHTML = WL.slice(0, 6).map(([w, n]) => `<div class="flex items-center justify-between text-sm"><span class="flex items-center gap-2 text-slate-700"><span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>${w}</span><span class="tnum font-medium text-slate-900">${n} <span class="text-slate-400 font-normal">RDV</span></span></div>`).join('') + (WL.length > 6 ? `<p class="text-xs text-slate-500 pt-1">+ ${WL.length - 6} autres wilayas</p>` : '');
+
+    // Daily
+    const days = {}; L.forEach(r => days[r.date] = (days[r.date] || 0) + 1);
+    const DK = Object.keys(days).sort();
+    dailyChart && dailyChart.destroy();
+    dailyChart = new Chart($('#daily'), {
+      type: 'bar', data: { labels: DK.map(d => +d.slice(8)), datasets: [{ data: DK.map(d => days[d]), backgroundColor: C.hi, maxBarThickness: 14 }] },
+      options: { scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } }, y: { ticks: { maxTicksLimit: 4, precision: 0 } } },
+        plugins: { tooltip: { callbacks: { title: i => fmt.weekday(DK[i[0].dataIndex]) + ' ' + fmt.date(DK[i[0].dataIndex]), label: i => ' ' + i.raw + ' rendez-vous' } } } },
+    });
+    WK.refreshIcons();
+  }
+
+  WK.seg($('#trendSeg'), v => { trendMode = v; render(); });
+  sel.onchange = render;
+  render();
+
+  $('#seeAnom') && ($('#seeAnom').onclick = () => {
+    const A = [
+      ['sigma', 'Totaux tronqués à la ligne 40', 'Les formules <code class="text-xs bg-slate-100 px-1 rounded">=SUM(C2:C40)</code> et <code class="text-xs bg-slate-100 px-1 rounded">SUMIF(…$R$2:$R$40)</code> s\'arrêtent à la ligne 40. Novembre compte déjà ${byMonth(rdvs(), CUR_MONTH).length} RDV : <b>${WK.excelGap().n} rendez-vous et ${fmt.da(WK.excelGap().ca)} de revenus</b> sont absents des salaires et du résultat. Le bloc « La somme » écrase en plus les lignes synchronisées 41 à 57.', 'red'],
+      ['function-square', 'Formule erronée : « Total net income from WhatsApp »', 'La formule additionne la cellule vide <code class="text-xs bg-slate-100 px-1 rounded">J62</code> et mélange la colonne d\'une commerciale interne avec les agents WhatsApp. Le ROI WhatsApp affiché n\'est donc pas fiable.', 'red'],
+      ['spell-check', 'Noms saisis de plusieurs façons', '« anis / aniss », « farouk / farouq », « mehdi / mahdi », « rania / ranya »… Impossible de suivre une personne dans le temps. Ici, les noms sont choisis dans une liste.', 'amber'],
+      ['columns-3', 'Structure qui change chaque mois', 'Les colonnes des commerciaux changent d\'un mois à l\'autre (4 en juillet, 14 en novembre) et les règles (taux 256 DA, 5 % de frais, 4 000 DA de charge, salaires de base) sont écrites en dur dans les formules.', 'amber'],
+    ];
+    openPanel(`${WK.panelHead('Anomalies du fichier Excel', 'Analyse de « Comptabilité B — Privé », onglet NOV 2026')}
+      <div class="flex-1 overflow-y-auto p-6 space-y-4">${A.map(a => `<div class="rounded-xl border border-slate-200 p-4 flex gap-4"><span class="w-9 h-9 rounded-lg ${a[3] === 'red' ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-700'} flex items-center justify-center shrink-0">${icon(a[0], 'w-4.5 h-4.5')}</span><div><p class="text-sm font-semibold text-slate-900">${a[1]}</p><p class="text-sm text-slate-600 mt-1 leading-relaxed">${a[2]}</p></div></div>`).join('')}
+        <div class="rounded-xl bg-brand-50 border border-brand-100 p-4 text-sm text-brand-900 flex gap-3"><i data-lucide="sparkles" class="w-5 h-5 text-brand-700 shrink-0"></i><p>Dans l'application, chaque rendez-vous est un enregistrement : <b>aucune limite de lignes, aucune formule à recopier</b>. Les règles sont modifiables dans <a href="parametres.html" class="underline font-medium">Paramètres</a>.</p></div>
+      </div>`);
+  });
+});
+</script>
+</body>
+</html>

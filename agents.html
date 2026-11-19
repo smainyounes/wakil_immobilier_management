@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="icon" href="assets/logo.jpg"><link rel="apple-touch-icon" href="assets/logo.jpg">
+<title>Performance agents · El Wakil Immobilier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script><script src="assets/tw.js"></script>
+<link rel="stylesheet" href="assets/app.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="assets/data.js"></script><script src="assets/app.js"></script>
+</head>
+<body>
+<div id="page">
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Performance des commerciaux</h1>
+      <p class="text-sm text-slate-500 mt-1">Ce que chaque agent rapporte, après charges, salaire et sponsoring.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <select id="month" class="field !w-auto font-medium"></select>
+      <button id="export" class="btn btn-secondary"><i data-lucide="download"></i> Exporter</button>
+    </div>
+  </div>
+
+  <div id="kpis" class="mt-6 grid grid-cols-2 xl:grid-cols-5 gap-4"></div>
+
+  <div id="groups" class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+
+  <div class="mt-6 grid grid-cols-1 gap-4">
+    <div class="card p-5 order-2">
+      <h3 class="font-semibold text-slate-900">Résultat net par agent</h3>
+      <p class="text-sm text-slate-500">CA − charges RDV − salaire − sponsoring</p>
+      <div class="chart-box mt-4" id="netBox"><canvas id="net"></canvas></div>
+      <div class="mt-3 flex items-center gap-4 text-xs text-slate-600"><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-[#28589e]"></span>Bénéficiaire</span><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-[#e34948]"></span>Déficitaire</span></div>
+    </div>
+    <div class="card overflow-hidden order-1">
+      <div class="px-5 pt-5 pb-3 flex items-center justify-between"><div><h3 class="font-semibold text-slate-900">Détail par agent</h3><p class="text-sm text-slate-500">Cliquez sur un agent pour voir son historique</p></div>
+        <div class="seg" id="seg"><button data-v="all" class="on">Tous</button><button data-v="interne">Internes</button><button data-v="whatsapp">WhatsApp</button></div></div>
+      <div class="overflow-x-auto thin-scroll"><table class="tbl m-stack"><thead><tr><th>Agent</th><th class="num">RDV</th><th class="num">CA apporté</th><th class="num">Charges</th><th class="num">Salaire</th><th class="num">Sponsoring</th><th class="num">Net</th><th class="num">ROI</th></tr></thead><tbody id="rows"></tbody><tfoot id="foot"></tfoot></table></div>
+    </div>
+  </div>
+</div>
+
+<script>
+WK.mount({ id: 'agents', title: 'Performance agents', section: 'Finance', perm: 'agents.view', help: 'agents' }, () => {
+  const { $, $$, fmt, can, agentStats, months, sum, avatar, badge, icon, esc, C, openPanel, panelHead, exportCSV, rdvs, byMonth, settings, CUR_MONTH } = WK;
+  const fin = can('finance.view');
+  $('#month').innerHTML = months().slice().reverse().map(m => `<option value="${m}">${fmt.month(m)}</option>`).join('');
+  let grp = 'all', chart;
+  const money = (v, cls = '') => fin ? `<span class="${cls}">${fmt.n(v)}</span>` : '<span class="text-slate-300">•••</span>';
+  const netCell = v => !fin ? '<span class="text-slate-300">•••</span>' : `<span class="inline-flex items-center gap-1 font-semibold ${v >= 0 ? 'text-emerald-700' : 'text-red-600'}">${icon(v >= 0 ? 'arrow-up-right' : 'arrow-down-right', 'w-3.5 h-3.5')}${fmt.n(Math.abs(v))}</span>`;
+
+  function render() {
+    const m = $('#month').value, S = agentStats(m), s = settings();
+    const hasSpons = S.some(a => a.usd);
+    const tot = k => sum(S, k);
+    const k = (l, v, sub, ic, cls = '') => `<div class="card px-5 py-4"><div class="flex items-center gap-2 text-xs font-medium text-slate-500">${icon(ic, 'w-4 h-4')}${l}</div><p class="mt-2 text-xl font-semibold tnum ${cls || 'text-slate-900'}">${v}</p><p class="text-xs text-slate-400 mt-0.5">${sub}</p></div>`;
+    $('#kpis').innerHTML = [
+      k('CA apporté', fmt.money(tot('ca')), `${tot('rdv')} rendez-vous`, 'banknote'),
+      k('Charges terrain', fmt.money(tot('charges')), `${fmt.n(s.chargeRdv)} DA × RDV`, 'truck'),
+      k('Masse salariale', fmt.money(tot('salaire')), `${S.length} commerciaux`, 'wallet'),
+      k('Sponsoring', hasSpons ? fmt.money(tot('spons')) : 'Non saisi', hasSpons ? `${fmt.n(tot('usd'))} $ · taux ${s.tauxUSD}` : 'aucun budget ce mois', 'megaphone'),
+      k('Résultat net', fmt.money(tot('net')), 'tous agents confondus', 'scale', tot('net') < 0 ? 'text-red-600' : 'text-emerald-700'),
+    ].join('');
+
+    const G = t => { const g = S.filter(a => a.type === t); return { n: g.length, actifs: g.filter(a => a.rdv).length, rdv: sum(g, 'rdv'), ca: sum(g, 'ca'), sal: sum(g, 'salaire'), spons: sum(g, 'spons'), net: sum(g, 'net') }; };
+    const gi = G('interne'), gw = G('whatsapp');
+    const zero = S.filter(a => a.type === 'whatsapp' && a.usd && !a.rdv);
+    const gcard = (title, sub, g, ic, extra) => `<div class="card p-5"><div class="flex items-start gap-3"><span class="w-10 h-10 rounded-xl bg-slate-50 ring-1 ring-slate-200 text-slate-600 flex items-center justify-center">${icon(ic, 'w-5 h-5')}</span><div class="flex-1"><p class="font-semibold text-slate-900">${title}</p><p class="text-xs text-slate-500">${sub}</p></div>
+      <div class="text-right"><p class="text-xs text-slate-500">Résultat net</p><p class="text-lg font-semibold tnum ${g.net < 0 ? 'text-red-600' : 'text-emerald-700'}">${fmt.signed(g.net)}</p></div></div>
+      <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">${[['Agents', `${g.actifs}/${g.n}`], ['RDV', g.rdv], ['CA', fmt.money(g.ca)], ['Coût', fmt.money(g.sal + g.spons)]].map(([a, b]) => `<div class="rounded-lg bg-slate-50 py-2"><p class="text-2xs text-slate-500">${a}</p><p class="text-sm font-semibold tnum text-slate-900">${b}</p></div>`).join('')}</div>${extra || ''}</div>`;
+    $('#groups').innerHTML = gcard('Commerciaux internes', `Salaire fixe + ${fmt.n(s.primeRdv)} DA par RDV`, gi, 'building-2') +
+      gcard('Agents WhatsApp (sponsorisés)', `${fmt.n(s.primeRdv + s.bonusWhatsapp)} DA par RDV + budget publicitaire`, gw, 'megaphone',
+        zero.length ? `<div class="mt-4 rounded-lg bg-red-50 ring-1 ring-red-100 p-3 text-sm text-red-800 flex gap-2.5">${icon('alert-octagon', 'w-4 h-4 shrink-0 mt-0.5')}<span><b>${zero.length} agents sponsorisés n'ont apporté aucun RDV</b> (${zero.map(a => a.nom).join(', ')}) : ${fmt.da(sum(zero, 'spons'))} dépensés sans retour.</span></div>` : '');
+
+    const L = S.filter(a => grp === 'all' || a.type === grp).sort((a, b) => b.net - a.net);
+    $('#rows').innerHTML = L.map(a => `<tr data-a="${a.nom}" class="cursor-pointer">
+      <td><div class="flex items-center gap-2.5">${avatar(a.nom, 'w-8 h-8 text-xs')}<div><p class="font-medium text-slate-800">${a.nom}</p><p class="text-2xs text-slate-500 whitespace-nowrap">${a.type === 'interne' ? 'Interne · fixe ' + fmt.n(a.base) : 'WhatsApp'}</p></div></div></td>
+      <td class="num">${a.rdv || '<span class="text-slate-300">0</span>'}</td><td class="num">${money(a.ca)}</td><td class="num text-slate-600">${money(a.charges)}</td><td class="num text-slate-600">${money(a.salaire)}</td>
+      <td class="num text-slate-600">${a.usd ? `${money(a.spons)}<p class="text-2xs text-slate-400">${a.usd} $</p>` : '<span class="text-slate-300">—</span>'}</td>
+      <td class="num">${netCell(a.net)}</td>
+      <td class="num">${a.roi == null ? '<span class="text-slate-300">—</span>' : badge(fmt.pct(a.roi), a.roi >= 0 ? 'green' : 'red')}</td></tr>`).join('');
+    $('#foot').innerHTML = `<tr class="bg-slate-50 font-semibold text-slate-900"><td class="px-4 py-3">Total</td><td class="num px-4">${sum(L, 'rdv')}</td><td class="num px-4">${money(sum(L, 'ca'))}</td><td class="num px-4">${money(sum(L, 'charges'))}</td><td class="num px-4">${money(sum(L, 'salaire'))}</td><td class="num px-4">${money(sum(L, 'spons'))}</td><td class="num px-4">${netCell(sum(L, 'net'))}</td><td></td></tr>`;
+
+    const NL = S.slice().sort((a, b) => b.net - a.net);
+    $('#netBox').style.height = Math.max(220, NL.length * 26 + 40) + 'px';
+    chart && chart.destroy();
+    chart = new Chart($('#net'), { type: 'bar', data: { labels: NL.map(a => a.nom), datasets: [{ data: NL.map(a => a.net), backgroundColor: NL.map(a => a.net >= 0 ? C.s1 : C.neg), maxBarThickness: 16, borderSkipped: false }] },
+      options: { indexAxis: 'y', scales: { x: { ticks: { callback: v => fmt.n(v), maxTicksLimit: 6 }, grid: { color: c => c.tick.value === 0 ? '#94a3b8' : C.grid } }, y: { grid: { display: false } } },
+        plugins: { tooltip: { callbacks: { label: i => ' Net : ' + fmt.signed(i.raw), afterLabel: i => { const a = NL[i.dataIndex]; return ` ${a.rdv} RDV · CA ${fmt.da(a.ca)}`; } } } },
+        onClick: (e, els) => els[0] && profile(NL[els[0].index].nom) } });
+    WK.refreshIcons();
+  }
+
+  function profile(nom) {
+    const m = $('#month').value, a = agentStats(m).find(x => x.nom === nom), M = months();
+    const series = M.map(x => byMonth(rdvs(), x).filter(r => r.agent === nom).length);
+    const total = series.reduce((x, y) => x + y, 0);
+    const W = {}; rdvs().filter(r => r.agent === nom).forEach(r => W[r.wilaya] = (W[r.wilaya] || 0) + 1);
+    const p = openPanel(`${panelHead(`<span class="flex items-center gap-3">${avatar(nom, 'w-9 h-9 text-sm')}${nom}</span>`, a.type === 'interne' ? 'Commercial(e) interne' : 'Agent WhatsApp sponsorisé')}
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="grid grid-cols-3 gap-3">${[['RDV ce mois', a.rdv], ['Depuis déc. 2025', total], ['Net ce mois', fin ? fmt.money(a.net) : '•••']].map(([l, v]) => `<div class="rounded-xl ring-1 ring-slate-200 p-3"><p class="text-xs text-slate-500">${l}</p><p class="text-lg font-semibold tnum mt-0.5">${v}</p></div>`).join('')}</div>
+        <h4 class="mt-6 text-sm font-semibold text-slate-900">Rendez-vous par mois</h4>
+        <div class="chart-box h-[180px] mt-3"><canvas id="pc"></canvas></div>
+        <h4 class="mt-6 text-sm font-semibold text-slate-900">Calcul du mois</h4>
+        <dl class="mt-2 text-sm">${[['CA apporté', a.ca, ''], ['Charges terrain (' + a.rdv + ' × ' + fmt.n(settings().chargeRdv) + ')', -a.charges, ''], ['Salaire', -a.salaire, a.type === 'interne' ? `fixe ${fmt.n(a.base)} + primes` : `${a.rdv} × ${fmt.n(settings().primeRdv + settings().bonusWhatsapp)}`], ['Sponsoring', -a.spons, a.usd ? `${a.usd} $ × 1,05 × ${settings().tauxUSD}` : '']].map(([l, v, h]) => `<div class="flex justify-between py-2 border-b border-slate-100"><dt class="text-slate-600">${l}${h ? `<span class="block text-2xs text-slate-400">${h}</span>` : ''}</dt><dd class="tnum font-medium">${fin ? fmt.signed(v) : '•••'}</dd></div>`).join('')}
+          <div class="flex justify-between py-3"><dt class="font-semibold">Résultat net</dt><dd class="tnum font-semibold ${a.net < 0 ? 'text-red-600' : 'text-emerald-700'}">${fin ? fmt.signed(a.net) : '•••'}</dd></div></dl>
+        <h4 class="mt-4 text-sm font-semibold text-slate-900">Wilayas les plus fréquentes</h4>
+        <div class="mt-2 flex flex-wrap gap-1.5">${Object.entries(W).sort((x, y) => y[1] - x[1]).slice(0, 8).map(([w, n]) => `<span class="text-xs rounded-md bg-slate-100 px-2 py-1 text-slate-700">${w} <b class="tnum">${n}</b></span>`).join('')}</div>
+      </div>`);
+    new Chart($('#pc', p), { type: 'bar', data: { labels: M.map(fmt.monthShort), datasets: [{ data: series, backgroundColor: M.map(x => x === m ? C.hi : C.soft), maxBarThickness: 22 }] },
+      options: { scales: { x: { grid: { display: false }, ticks: { font: { size: 10 } } }, y: { ticks: { maxTicksLimit: 4, precision: 0 } } }, plugins: { tooltip: { callbacks: { label: i => ' ' + i.raw + ' RDV' } } } } });
+  }
+
+  $('#rows').onclick = e => { const tr = e.target.closest('[data-a]'); tr && profile(tr.dataset.a); };
+  WK.seg($('#seg'), v => { grp = v; render(); });
+  $('#month').onchange = render;
+  $('#export').onclick = () => { const S = agentStats($('#month').value); exportCSV(`performance-${$('#month').value}.csv`, [['Agent', 'Type', 'RDV', 'CA', 'Charges', 'Salaire', 'Sponsoring $', 'Sponsoring DA', 'Net', 'ROI'], ...S.map(a => [a.nom, a.type, a.rdv, a.ca, a.charges, a.salaire, a.usd, Math.round(a.spons), Math.round(a.net), a.roi == null ? '' : a.roi.toFixed(2)])]); };
+  render();
+});
+</script>
+</body>
+</html>

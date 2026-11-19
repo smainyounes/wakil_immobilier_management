@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="icon" href="assets/logo.jpg"><link rel="apple-touch-icon" href="assets/logo.jpg">
+<title>Connexion · El Wakil Immobilier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script><script src="assets/tw.js"></script>
+<link rel="stylesheet" href="assets/app.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="assets/data.js"></script><script src="assets/app.js"></script>
+</head>
+<body class="min-h-screen bg-white">
+<div class="min-h-screen grid lg:grid-cols-[1fr_1.1fr]">
+  <!-- Form -->
+  <div class="light-zone relative flex flex-col px-6 sm:px-12 lg:px-20 py-10">
+    <button data-theme-toggle title="Mode sombre" class="btn btn-ghost !p-2 absolute top-8 right-6 sm:right-10"><i data-lucide="moon" class="w-5 h-5"></i></button>
+    <div class="flex items-center gap-3">
+      <img src="assets/logo.jpg" alt="El Wakil Immobilier" class="logo-img w-11 h-11">
+      <div class="leading-tight"><p class="font-semibold tracking-tight text-slate-900">El Wakil <span class="text-brand-700">Immobilier</span></p><p class="text-xs text-slate-500">Espace de gestion</p></div>
+    </div>
+
+    <div class="flex-1 flex items-center">
+      <div class="w-full max-w-[400px] mx-auto lg:mx-0 py-12">
+        <h1 class="text-[28px] font-semibold tracking-tight text-slate-900">Bon retour 👋</h1>
+        <p class="text-slate-500 mt-2">Connectez-vous pour suivre l'activité de l'agence.</p>
+
+        <form id="login" class="mt-8 space-y-4">
+          <div>
+            <label class="label" for="email">Adresse e-mail ou téléphone</label>
+            <input id="email" class="field !py-2.5" value="mouadh@elwakil-immo.dz" autocomplete="username">
+          </div>
+          <div>
+            <div class="flex items-center justify-between"><label class="label" for="pw">Mot de passe</label><a href="#" class="text-xs font-medium text-brand-700 hover:text-brand-800 mb-1.5">Mot de passe oublié ?</a></div>
+            <div class="relative">
+              <input id="pw" type="password" class="field !py-2.5 pr-10" value="demo-demo-demo" autocomplete="current-password">
+              <button type="button" id="eye" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><i data-lucide="eye" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+          <label class="flex items-center gap-2 text-sm text-slate-600 select-none"><input type="checkbox" checked class="rounded border-slate-300 text-brand-700 focus:ring-brand-500"> Rester connecté sur cet appareil</label>
+          <button class="btn btn-primary w-full !py-2.5 !text-[15px]">Se connecter <i data-lucide="arrow-right"></i></button>
+        </form>
+
+        <div class="mt-10">
+          <div class="flex items-center gap-3 text-xs text-slate-400"><span class="h-px flex-1 bg-slate-200"></span>ACCÈS DÉMO PAR RÔLE<span class="h-px flex-1 bg-slate-200"></span></div>
+          <div id="demo" class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+        </div>
+      </div>
+    </div>
+    <p class="text-xs text-slate-400">© 2026 El Wakil Immobilier · Données chiffrées, hébergement en Algérie</p>
+  </div>
+
+  <!-- Brand panel -->
+  <div class="hidden lg:flex relative overflow-hidden bg-night-950 text-white">
+    <div class="absolute inset-0 opacity-[.35]" style="background-image: radial-gradient(circle at 20% 15%, #a16207 0, transparent 45%), radial-gradient(circle at 85% 80%, #713f12 0, transparent 40%);"></div>
+    <div class="absolute inset-0 opacity-[.07]" style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 48px 48px;"></div>
+    <div class="relative z-10 flex flex-col justify-between p-14 w-full">
+      <div class="inline-flex items-center gap-2 self-start rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-slate-300"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Synchronisé · <span id="nTot"></span> rendez-vous depuis déc. 2025</div>
+
+      <div class="max-w-xl">
+        <h2 class="text-[34px] leading-tight font-semibold tracking-tight">Toute l'agence, <span class="text-brand-300">en un seul écran.</span></h2>
+        <p class="mt-4 text-slate-300 leading-relaxed">Rendez-vous, équipe terrain, sponsoring, paie et rentabilité, calculés automatiquement. Chacun ne voit que ce qui le concerne.</p>
+
+        <div class="mt-10 rounded-2xl border border-white/10 bg-white/[.06] backdrop-blur p-5 shadow-2xl">
+          <div class="flex items-center justify-between">
+            <div><p class="text-xs text-slate-400">Rendez-vous par mois</p><p class="text-2xl font-semibold mt-1 tnum" id="best"></p></div>
+            <span class="text-xs text-slate-400">Déc. 25 → Nov. 26</span>
+          </div>
+          <div id="bars" class="mt-5 h-28 flex items-end gap-1.5"></div>
+        </div>
+
+        <figure class="mt-8 flex gap-4 items-start">
+          <span class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center shrink-0"><i data-lucide="quote" class="w-4 h-4 text-brand-300"></i></span>
+          <div><blockquote dir="rtl" class="text-slate-200 text-[15px] leading-relaxed">بعت الفيلا في أقل من شهر، خدمة ممتازة</blockquote><figcaption class="text-xs text-slate-400 mt-1">Client vendeur · enquête de satisfaction</figcaption></div>
+        </figure>
+      </div>
+
+      <div class="flex gap-8 text-sm text-slate-400">
+        <span class="flex items-center gap-2"><i data-lucide="shield-check" class="w-4 h-4"></i> Rôles & permissions</span>
+        <span class="flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Journal d'activité</span>
+        <span class="flex items-center gap-2"><i data-lucide="smartphone" class="w-4 h-4"></i> Mobile</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const { roles, users, store, avatar, monthly, fmt } = WK;
+  const demo = document.getElementById('demo');
+  demo.innerHTML = roles().map(r => {
+    const u = users().find(x => x.role === r.id && x.statut === 'Actif');
+    return `<button data-r="${r.id}" class="group flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2.5 text-left hover:border-brand-300 hover:bg-brand-50/40 transition">
+      ${avatar(u ? u.nom : r.nom, 'w-8 h-8 text-xs')}
+      <span class="min-w-0"><span class="block text-sm font-medium text-slate-800 truncate">${r.nom}</span><span class="block text-xs text-slate-500 truncate">${u ? u.nom : 'Aucun utilisateur'}</span></span>
+      <i data-lucide="arrow-up-right" class="w-4 h-4 ml-auto text-slate-300 group-hover:text-brand-700"></i></button>`;
+  }).join('');
+  demo.onclick = e => { const b = e.target.closest('[data-r]'); if (!b) return; store.set('role', b.dataset.r); location.href = WK.home(); };
+  document.getElementById('login').onsubmit = e => { e.preventDefault(); store.set('role', 'owner'); location.href = 'dashboard.html'; };
+  document.getElementById('eye').onclick = () => { const p = document.getElementById('pw'); p.type = p.type === 'password' ? 'text' : 'password'; };
+  const M = monthly(), max = Math.max(...M.map(m => m.rdv));
+  document.getElementById('bars').innerHTML = M.map((m, i) => `<div class="flex-1 rounded-t-[4px] ${i === M.length - 2 ? 'bg-brand-400' : 'bg-white/15'}" style="height:${Math.max(6, m.rdv / max * 100)}%" title="${fmt.month(m.m)} : ${m.rdv} RDV"></div>`).join('');
+  document.getElementById('nTot').textContent = WK.rdvs().length;
+  const oct = M.find(m => m.m === '2026-10'), sep = M.find(m => m.m === '2026-09');
+  document.getElementById('best').innerHTML = `${oct.rdv} <span class="text-sm font-medium text-emerald-400">+${Math.round((oct.rdv / sep.rdv - 1) * 100)} % vs sept.</span>`;
+  if (WK.isDark()) document.querySelector('[data-theme-toggle]').innerHTML = '<i data-lucide="sun" class="w-5 h-5"></i>';
+  lucide.createIcons();
+</script>
+</body>
+</html>

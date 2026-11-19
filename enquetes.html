@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="icon" href="assets/logo.jpg"><link rel="apple-touch-icon" href="assets/logo.jpg">
+<title>Enquêtes clients · El Wakil Immobilier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Arabic:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script><script src="assets/tw.js"></script>
+<link rel="stylesheet" href="assets/app.css">
+<style>[dir=rtl]{font-family:'Noto Sans Arabic',Inter,sans-serif}</style>
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="assets/data.js"></script><script src="assets/app.js"></script>
+</head>
+<body>
+<div id="page">
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Enquêtes clients</h1>
+      <p class="text-sm text-slate-500 mt-1">Ce que disent les vendeurs et les membres de la plateforme.</p>
+    </div>
+    <button id="send" class="btn btn-primary"><i data-lucide="send"></i> Envoyer l'enquête</button>
+  </div>
+
+  <div class="mt-6 border-b border-slate-200 flex gap-6 overflow-x-auto thin-scroll whitespace-nowrap" id="tabs">
+    <button data-t="vendeurs" class="pb-3 text-sm font-medium border-b-2 border-brand-600 text-slate-900 flex items-center gap-2"><i data-lucide="home" class="w-4 h-4"></i> Clients vendeurs</button>
+    <button data-t="formation" class="pb-3 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2"><i data-lucide="graduation-cap" class="w-4 h-4"></i> Membres de la plateforme</button>
+  </div>
+
+  <div id="summary" class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+  <div id="qs" class="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+  <div class="mt-6"><h3 class="font-semibold text-slate-900">Verbatims</h3><p class="text-sm text-slate-500">Réponses libres, telles qu'écrites</p><div id="verb" class="mt-4 columns-1 md:columns-2 xl:columns-3 gap-4"></div></div>
+</div>
+
+<script>
+WK.mount({ id: 'enquetes', title: 'Enquêtes clients', section: 'Clients', perm: 'enquetes.view', help: 'enquetes' }, () => {
+  const { $, $$, D, icon, esc, toast, openPanel, panelHead } = WK;
+  const FR = {
+    vendeurs: [
+      ['Qu\'attendiez-vous avant tout d\'une agence immobilière ?', ['Trouver des acheteurs sérieux', 'Vendre rapidement', 'Photos et marketing professionnels', 'Un suivi continu', 'Confiance et crédibilité', 'Autre']],
+      ['Pourquoi avoir choisi El Wakil Immobilier ?', ['Confiance et crédibilité', 'Qualité des photos et vidéos', 'Rapidité de vente', 'La qualité de l\'accueil', 'Autre raison']],
+      ['Votre plus grande crainte avant de travailler avec nous ?', ['Que le bien ne se vende pas', 'Perdre du temps', 'Les clients pas sérieux', 'La méfiance envers les agences', 'Autre']],
+      ['Quel contenu vous a poussé à nous contacter ?', ['Vidéos conseils face caméra', 'Vidéos de présentation des biens', 'Photos des biens', 'Témoignages de clients', 'Autre']],
+      ['Pourquoi vendez-vous ce bien ?', ['Besoin d\'argent', 'Achat d\'un autre bien', 'Changement de logement', 'Héritage / partage familial', 'Investissement', 'Autre']],
+    ],
+    formation: [
+      ['Quel âge avez-vous ?', ['18–24 ans', '25–34 ans', '35–44 ans', '45 ans et plus']],
+      ['Quelle est votre situation actuelle ?', ['Étudiant(e)', 'Salarié(e)', 'Indépendant(e)', 'Chef d\'entreprise', 'Sans emploi']],
+      ['Objectif principal en rejoignant la plateforme ?', ['Revenu complémentaire', 'Travailler depuis chez soi', 'Créer son propre projet', 'Apprendre le métier de l\'immobilier', 'Autre']],
+      ['Principale hésitation avant de s\'inscrire ?', ['Le prix', 'La crédibilité', 'Ne pas savoir par où commencer', 'Simple hésitation', 'Autre']],
+      ['Revenu mensuel avant l\'inscription ?', ['Moins de 30 000 DA', '30 000 – 50 000 DA', '50 000 – 80 000 DA', 'Plus de 80 000 DA', 'Préfère ne pas répondre']],
+    ],
+  };
+  let tab = 'vendeurs';
+  function render() {
+    const S = D.surveys[tab], tr = FR[tab];
+    const n = S.responses.length;
+    const answered = S.responses.filter(r => Object.values(r.answers).some(Boolean)).length;
+    const top = (qi) => { const q = S.questions[qi], c = {}; S.responses.forEach(r => { const a = r.answers[qi]; if (a) c[a] = (c[a] || 0) + 1; }); const best = Object.entries(c).sort((a, b) => b[1] - a[1])[0]; return best ? [tr[qi][1][q.opts.indexOf(best[0])], best[1], Object.values(c).reduce((a, b) => a + b, 0)] : null; };
+    const card = (ic, l, v, s) => `<div class="card p-5 flex gap-4"><span class="w-10 h-10 rounded-xl bg-brand-50 text-brand-700 flex items-center justify-center shrink-0">${icon(ic, 'w-5 h-5')}</span><div><p class="text-xs font-medium text-slate-500">${l}</p><p class="text-base font-semibold text-slate-900 mt-0.5">${v}</p><p class="text-xs text-slate-500 mt-0.5">${s}</p></div></div>`;
+    if (tab === 'vendeurs') {
+      const a = top(1), b = top(0);
+      $('#summary').innerHTML = card('users', 'Réponses', `${n} clients interrogés`, `${answered} questionnaires complétés`) + (a ? card('heart-handshake', 'Raison n°1 de nous choisir', a[0], `${a[1]} réponses sur ${a[2]}`) : '') + (b ? card('target', 'Attente principale', b[0], `${b[1]} réponses sur ${b[2]}`) : '');
+    } else {
+      const a = top(2), b = top(3);
+      $('#summary').innerHTML = card('users', 'Réponses', `${n} membres interrogés`, `${S.responses.filter(r => r.wilaya).length} wilayas différentes`) + (a ? card('target', 'Motivation principale', a[0], `${a[1]} réponses sur ${a[2]}`) : '') + (b ? card('shield-question', 'Frein principal', b[0], `${b[1]} réponses sur ${b[2]} · à rassurer`) : '');
+    }
+    $('#qs').innerHTML = Object.entries(S.questions).map(([qi, q]) => {
+      const c = {}; let tot = 0; S.responses.forEach(r => { const a = r.answers[qi]; if (a) { c[a] = (c[a] || 0) + 1; tot++; } });
+      const rows = q.opts.map((o, i) => ({ fr: (tr[qi] && tr[qi][1][i]) || o, ar: o.replace(/^[A-F]\)\s*/, ''), n: c[o] || 0 })).sort((a, b) => b.n - a.n);
+      const max = Math.max(1, ...rows.map(r => r.n));
+      return `<div class="card p-5"><div class="flex items-start justify-between gap-3"><div><p class="text-xs font-medium text-brand-700">Question ${+qi + 1}</p><h3 class="font-semibold text-slate-900 mt-0.5">${tr[qi] ? tr[qi][0] : esc(q.q)}</h3><p dir="rtl" class="text-xs text-slate-400 mt-1">${esc(q.q)}</p></div><span class="text-xs text-slate-500 whitespace-nowrap">${tot} rép.</span></div>
+        <div class="mt-4 space-y-3">${rows.map((r, i) => `<div title="${esc(r.ar)}"><div class="flex justify-between text-sm"><span class="${i === 0 && r.n ? 'font-medium text-slate-900' : 'text-slate-600'}">${esc(r.fr)}</span><span class="tnum text-slate-700">${r.n} <span class="text-slate-400">· ${tot ? Math.round(r.n / tot * 100) : 0} %</span></span></div><div class="mt-1 h-2 rounded-full bg-slate-100"><div class="h-full rounded-full ${i === 0 && r.n ? 'bg-brand-500' : 'bg-brand-200'}" style="width:${r.n / max * 100}%"></div></div></div>`).join('')}</div></div>`;
+    }).join('');
+    const V = S.responses.filter(r => r.verbatim);
+    $('#verb').innerHTML = V.map((r, i) => `<figure class="card p-5 mb-4 break-inside-avoid"><span class="text-brand-200">${icon('quote', 'w-5 h-5')}</span><blockquote ${/[؀-ۿ]/.test(r.verbatim) ? 'dir="rtl"' : ''} class="mt-2 text-[15px] leading-relaxed text-slate-800">${esc(r.verbatim.replace(/^"|"$/g, ''))}</blockquote><figcaption class="mt-3 text-xs text-slate-500">${tab === 'vendeurs' ? 'Client vendeur' : 'Membre'} n°${i + 1}${r.wilaya ? ' · <span dir="auto">' + esc(r.wilaya) + '</span>' : ''}</figcaption></figure>`).join('');
+    WK.refreshIcons();
+  }
+  $('#tabs').onclick = e => { const b = e.target.closest('[data-t]'); if (!b) return; tab = b.dataset.t; $$('#tabs button').forEach(x => { const on = x === b; x.classList.toggle('border-brand-600', on); x.classList.toggle('text-slate-900', on); x.classList.toggle('border-transparent', !on); x.classList.toggle('text-slate-500', !on); }); render(); };
+  $('#send').onclick = () => {
+    const p = openPanel(`${panelHead('Envoyer l\'enquête', 'Le client répond depuis son téléphone, les résultats arrivent ici automatiquement')}
+      <div class="flex-1 overflow-y-auto p-6 space-y-5">
+        <div><label class="label">Questionnaire</label><select class="field"><option>Satisfaction clients vendeurs (5 questions)</option><option>Membres de la plateforme (6 questions)</option></select></div>
+        <div><label class="label">Lien à partager</label><div class="flex gap-2"><input class="field font-mono text-xs" readonly value="https://elwakil-immo.dz/e/vendeurs-7Kq2"><button id="copy" class="btn btn-secondary">${icon('copy')}</button></div></div>
+        <div class="rounded-xl ring-1 ring-slate-200 p-4"><p class="text-sm font-medium text-slate-800">Envoi automatique</p><p class="text-xs text-slate-500 mt-0.5">Envoyer l'enquête par WhatsApp 3 jours après chaque vente conclue.</p><button class="switch on mt-3" onclick="this.classList.toggle('on')"></button></div>
+      </div>
+      <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2"><button data-close class="btn btn-secondary">Fermer</button><button data-close class="btn btn-primary">${icon('message-circle')} Partager sur WhatsApp</button></div>`);
+    $('#copy', p).onclick = () => toast('Lien copié', 'copy');
+  };
+  render();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="icon" href="assets/logo.jpg"><link rel="apple-touch-icon" href="assets/logo.jpg">
+<title>Paramètres · El Wakil Immobilier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script><script src="assets/tw.js"></script>
+<link rel="stylesheet" href="assets/app.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="assets/data.js"></script><script src="assets/app.js"></script>
+</head>
+<body>
+<div id="page">
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Paramètres</h1>
+      <p class="text-sm text-slate-500 mt-1">Les règles de calcul de l'agence. Modifiez-les ici : primes, salaires et rentabilité sont recalculés partout.</p>
+    </div>
+    <button id="save" class="btn btn-primary"><i data-lucide="save"></i> Enregistrer les modifications</button>
+  </div>
+
+  <div class="mt-8 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-8 items-start">
+    <nav class="lg:sticky lg:top-24 space-y-0.5 text-sm" id="toc">
+      <a href="#agence" class="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-600 hover:bg-white hover:text-slate-900"><i data-lucide="building" class="w-4 h-4"></i> Agence</a>
+      <a href="#remu" class="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-600 hover:bg-white hover:text-slate-900"><i data-lucide="hand-coins" class="w-4 h-4"></i> Rémunération</a>
+      <a href="#charges" class="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-600 hover:bg-white hover:text-slate-900"><i data-lucide="receipt" class="w-4 h-4"></i> Charges & sponsoring</a>
+      <a href="#frais" class="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-600 hover:bg-white hover:text-slate-900"><i data-lucide="map-pinned" class="w-4 h-4"></i> Frais de mission</a>
+      <a href="#equipe" class="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-600 hover:bg-white hover:text-slate-900"><i data-lucide="users" class="w-4 h-4"></i> Équipe</a>
+      <a href="#donnees" class="flex items-center gap-2 rounded-lg px-3 py-2 text-slate-600 hover:bg-white hover:text-slate-900"><i data-lucide="database" class="w-4 h-4"></i> Données</a>
+    </nav>
+    <div class="space-y-6" id="form"></div>
+  </div>
+</div>
+
+<script>
+WK.mount({ id: 'parametres', title: 'Paramètres', section: 'Administration', perm: 'settings.manage', help: 'parametres' }, () => {
+  const { $, $$, settings, team, store, avatar, badge, icon, esc, toast, audit, fmt, DEFAULT_SETTINGS } = WK;
+  let S = settings(), T = JSON.parse(JSON.stringify(team()));
+  const section = (id, ic, title, sub, body) => `<section id="${id}" class="card scroll-mt-24"><div class="px-6 py-5 border-b border-slate-100 flex items-center gap-3"><span class="w-9 h-9 rounded-lg bg-brand-50 text-brand-700 flex items-center justify-center">${icon(ic)}</span><div><h2 class="font-semibold text-slate-900">${title}</h2><p class="text-sm text-slate-500">${sub}</p></div></div><div class="p-6">${body}</div></section>`;
+  const num = (k, label, hint, unit = 'DA') => `<div><label class="label">${label}</label><div class="relative"><input data-k="${k}" type="number" value="${S[k]}" class="field pr-12 tnum"><span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">${unit}</span></div>${hint ? `<p class="text-xs text-slate-500 mt-1.5">${hint}</p>` : ''}${DEFAULT_SETTINGS[k] !== undefined && S[k] !== DEFAULT_SETTINGS[k] ? `<p class="text-2xs text-amber-700 mt-1">Modifié (valeur Excel : ${fmt.n(DEFAULT_SETTINGS[k])})</p>` : ''}</div>`;
+  const WIL = ['Alger', 'Blida', 'Boumerdès', 'Tipaza', 'Médéa', 'Bouira', 'Tizi Ouzou', 'Aïn Defla', 'Chlef', 'Djelfa'];
+
+  function render() {
+    $('#form').innerHTML =
+      section('agence', 'building', 'Agence', 'Informations générales', `<div class="grid sm:grid-cols-2 gap-5">
+        <div><label class="label">Nom de l'agence</label><input data-k="agence" class="field" value="${esc(S.agence)}"></div>
+        <div><label class="label">Devise</label><select class="field"><option>Dinar algérien (DA)</option></select></div>
+        <div class="sm:col-span-2"><label class="label">Logo</label><div class="flex items-center gap-4"><img src="assets/logo.jpg" alt="" class="logo-img w-14 h-14"><button class="btn btn-secondary">${icon('upload')} Changer le logo</button></div></div></div>`) +
+      section('remu', 'hand-coins', 'Rémunération des commerciaux', 'Remplace les formules « Le salaire » du fichier Excel', `<div class="grid sm:grid-cols-2 gap-5">
+        ${num('primeRdv', 'Prime par rendez-vous', 'Versée au commercial pour chaque RDV réalisé.')}
+        ${num('bonusWhatsapp', 'Bonus agents WhatsApp', 'S\'ajoute à la prime pour les agents sponsorisés (sans salaire fixe).')}</div>
+        <div class="mt-5 rounded-xl bg-slate-50 ring-1 ring-slate-200 p-4 text-sm text-slate-700 grid sm:grid-cols-2 gap-3">
+          <p><span class="text-slate-500">Commercial interne :</span><br><b>fixe + ${fmt.n(S.primeRdv)} DA × RDV</b></p>
+          <p><span class="text-slate-500">Agent WhatsApp :</span><br><b>${fmt.n(S.primeRdv + S.bonusWhatsapp)} DA × RDV</b></p></div>`) +
+      section('charges', 'receipt', 'Charges & sponsoring', 'Utilisés pour le résultat net et le ROI', `<div class="grid sm:grid-cols-3 gap-5">
+        ${num('chargeRdv', 'Charge terrain par RDV', 'Transport, carburant, photographe.')}
+        ${num('tauxUSD', 'Taux du dollar', 'Taux appliqué aux budgets publicitaires.', 'DA/$')}
+        ${num('fraisSponsoring', 'Frais carte / plateforme', 'Ajoutés au montant en dollars.', '%')}</div>
+        <p class="mt-4 text-sm text-slate-600">Exemple : 100 $ de sponsoring coûtent <b class="tnum">${fmt.da(100 * (1 + S.fraisSponsoring / 100) * S.tauxUSD)}</b>.</p>`) +
+      section('frais', 'map-pinned', 'Frais de mission & présence', 'Barème appliqué à l\'équipe terrain', `<div class="grid sm:grid-cols-3 gap-5">
+        ${num('fraisNuitee', 'Mission avec nuitée', 'Par jour hors wilaya.')}${num('fraisJournee', 'Aller-retour même jour', 'Par jour hors wilaya.')}${num('repas', 'Repas', 'Par repas.')}
+        ${num('hotel', 'Hôtel', 'Par nuit.')}${num('conge', 'Travail pendant congé', 'Par jour.')}${num('bonus5rdv', '5ᵉ RDV dans la journée', 'Bonus par jour.')}
+        ${num('absence', 'Retenue pour absence', 'Par jour.')}</div>
+        <div class="mt-6"><label class="label">Wilayas de base (pas de frais de mission)</label><div class="flex flex-wrap gap-2 mt-2">${WIL.map(w => `<button data-wil="${w}" class="rounded-full px-3 py-1.5 text-sm border transition ${S.wilayasBase.includes(w) ? 'bg-night-900 border-night-900 text-brand-300' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'}">${w}</button>`).join('')}</div>
+        <p class="text-xs text-slate-500 mt-2">Un RDV en dehors de ces wilayas crée automatiquement une mission à valider.</p></div>`) +
+      section('equipe', 'users', 'Équipe', 'Commerciaux et photographes. Les noms apparaissent dans les listes de saisie.', `
+        <div class="flex items-center justify-between"><h3 class="text-sm font-semibold text-slate-900">Commerciaux <span class="text-slate-400 font-normal">· ${T.commerciaux.filter(a => a.actif).length} actifs</span></h3><button data-add="commerciaux" class="btn btn-secondary !py-1.5">${icon('plus')} Ajouter</button></div>
+        <div class="mt-3 rounded-xl ring-1 ring-slate-200 overflow-hidden"><table class="tbl m-stack"><thead><tr><th>Nom</th><th>Type</th><th class="num">Salaire fixe</th><th class="text-center">Actif</th></tr></thead><tbody>
+        ${T.commerciaux.map((a, i) => `<tr class="${a.actif ? '' : 'opacity-50'}"><td><div class="flex items-center gap-2.5">${avatar(a.nom)}<input data-c="${i}" data-f="nom" class="field !py-1 !w-40" value="${esc(a.nom)}"></div></td>
+          <td><select data-c="${i}" data-f="type" class="field !py-1 !w-auto"><option value="interne" ${a.type === 'interne' ? 'selected' : ''}>Interne</option><option value="whatsapp" ${a.type === 'whatsapp' ? 'selected' : ''}>WhatsApp</option></select></td>
+          <td class="num"><input data-c="${i}" data-f="base" type="number" class="field !py-1 !w-28 text-right tnum" value="${a.base}" ${a.type === 'whatsapp' ? 'disabled' : ''}></td>
+          <td class="text-center"><button data-c="${i}" data-f="actif" class="switch inline-block ${a.actif ? 'on' : ''}"></button></td></tr>`).join('')}</tbody></table></div>
+        <div class="mt-8 flex items-center justify-between"><h3 class="text-sm font-semibold text-slate-900">Équipe terrain <span class="text-slate-400 font-normal">· ${T.terrain.filter(a => a.actif).length} actifs</span></h3><button data-add="terrain" class="btn btn-secondary !py-1.5">${icon('plus')} Ajouter</button></div>
+        <div class="mt-3 rounded-xl ring-1 ring-slate-200 overflow-hidden"><table class="tbl m-stack"><thead><tr><th>Nom</th><th>Poste</th><th class="num">Salaire de base</th><th class="text-center">Actif</th></tr></thead><tbody>
+        ${T.terrain.map((a, i) => `<tr class="${a.actif ? '' : 'opacity-50'}"><td><div class="flex items-center gap-2.5">${avatar(a.nom)}<input data-t="${i}" data-f="nom" class="field !py-1 !w-40" value="${esc(a.nom)}"></div></td>
+          <td><input data-t="${i}" data-f="poste" class="field !py-1" value="${esc(a.poste || '')}"></td>
+          <td class="num"><input data-t="${i}" data-f="base" type="number" class="field !py-1 !w-28 text-right tnum" value="${a.base}"></td>
+          <td class="text-center"><button data-t="${i}" data-f="actif" class="switch inline-block ${a.actif ? 'on' : ''}"></button></td></tr>`).join('')}</tbody></table></div>`) +
+      section('donnees', 'database', 'Données', 'Import, sauvegarde et démonstration', `
+        <div class="rounded-xl ring-1 ring-slate-200 p-5">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div><p class="flex items-center gap-2 font-semibold text-slate-900">${icon('file-spreadsheet', 'w-5 h-5 text-emerald-600')} Importer depuis Excel</p>
+            <p class="text-sm text-slate-500 mt-1">Utilisez toujours le modèle : le fichier importé aura exactement la même structure que l'application.</p></div>
+            <span class="text-xs text-slate-500">${WK.rdvs().length} RDV · ${WK.clients().length} clients · ${WK.ccp().length} versements</span>
+          </div>
+          <ol class="mt-5 grid md:grid-cols-3 gap-3">
+            <li class="rounded-xl bg-slate-50 p-4 flex flex-col">
+              <span class="flex items-center gap-2 text-sm font-semibold text-slate-900"><span class="w-6 h-6 rounded-full bg-night-900 text-brand-300 text-xs flex items-center justify-center">1</span>Télécharger le modèle</span>
+              <p class="text-xs text-slate-500 mt-2 flex-1">Un fichier Excel avec les bons onglets et colonnes, des listes déroulantes (commerciaux, photographes, wilayas…) et des contrôles : montants entiers en DA, dates valides.</p>
+              <a href="assets/modele-import-elwakil.xlsx" download="modele-import-elwakil.xlsx" id="dlTpl" class="btn btn-primary mt-3 w-full">${icon('download')} Modèle Excel (.xlsx)</a>
+            </li>
+            <li class="rounded-xl bg-slate-50 p-4 flex flex-col">
+              <span class="flex items-center gap-2 text-sm font-semibold text-slate-900"><span class="w-6 h-6 rounded-full bg-night-900 text-brand-300 text-xs flex items-center justify-center">2</span>Remplir le fichier</span>
+              <ul class="text-xs text-slate-500 mt-2 space-y-1 flex-1">
+                <li class="flex gap-1.5">${icon('check', 'w-3.5 h-3.5 text-emerald-600 shrink-0 mt-px')}Ne pas modifier les titres de colonnes</li>
+                <li class="flex gap-1.5">${icon('check', 'w-3.5 h-3.5 text-emerald-600 shrink-0 mt-px')}Une ligne = un RDV, un client, un versement…</li>
+                <li class="flex gap-1.5">${icon('check', 'w-3.5 h-3.5 text-emerald-600 shrink-0 mt-px')}Montants en DA sans décimales : 35000</li>
+                <li class="flex gap-1.5">${icon('check', 'w-3.5 h-3.5 text-emerald-600 shrink-0 mt-px')}Colonnes en jaune (*) obligatoires</li>
+              </ul>
+            </li>
+            <li class="rounded-xl bg-slate-50 p-4 flex flex-col">
+              <span class="flex items-center gap-2 text-sm font-semibold text-slate-900"><span class="w-6 h-6 rounded-full bg-night-900 text-brand-300 text-xs flex items-center justify-center">3</span>Importer et vérifier</span>
+              <p class="text-xs text-slate-500 mt-2 flex-1">Le fichier est contrôlé ligne par ligne. Vous voyez les erreurs avant d'importer ; seules les lignes correctes sont ajoutées.</p>
+              <label class="btn btn-secondary mt-3 w-full cursor-pointer">${icon('upload')} Importer un fichier<input id="impFile" type="file" accept=".xlsx,.xls" class="hidden"></label>
+            </li>
+          </ol>
+        </div>
+        <div class="mt-4 grid sm:grid-cols-2 gap-4">
+        <div class="rounded-xl ring-1 ring-slate-200 p-4"><p class="flex items-center gap-2 text-sm font-medium text-slate-900">${icon('hard-drive-download', 'w-4 h-4 text-brand-700')} Sauvegarde</p><p class="text-xs text-slate-500 mt-1">Sauvegarde automatique chaque nuit. Dernière : aujourd'hui, 03:00. L'export utilise le même format que le modèle.</p><button id="exportAll" class="btn btn-secondary !py-1.5 mt-3 w-full">${icon('download')} Tout exporter (.xlsx)</button></div>
+        <div class="rounded-xl ring-1 ring-red-100 bg-red-50/40 p-4"><p class="flex items-center gap-2 text-sm font-medium text-slate-900">${icon('rotate-ccw', 'w-4 h-4 text-red-600')} Réinitialiser la démo</p><p class="text-xs text-slate-500 mt-1">Efface les saisies, rôles et réglages modifiés pendant la démonstration.</p><button id="resetDemo" class="btn btn-danger !py-1.5 mt-3 w-full">Réinitialiser</button></div></div>`);
+    WK.refreshIcons();
+  }
+
+  $('#form').addEventListener('input', e => {
+    const el = e.target;
+    if (el.dataset.k) { S[el.dataset.k] = el.type === 'number' ? +el.value : el.value; }
+    if (el.dataset.c) { const a = T.commerciaux[+el.dataset.c]; a[el.dataset.f] = el.type === 'number' ? +el.value : el.value; if (el.dataset.f === 'type') { if (el.value === 'whatsapp') a.base = 0; render(); } }
+    if (el.dataset.t) { const a = T.terrain[+el.dataset.t]; a[el.dataset.f] = el.type === 'number' ? +el.value : el.value; }
+  });
+  $('#form').addEventListener('change', e => { if (e.target.dataset.k) render(); });
+  $('#form').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.wil) { const w = b.dataset.wil; S.wilayasBase = S.wilayasBase.includes(w) ? S.wilayasBase.filter(x => x !== w) : [...S.wilayasBase, w]; render(); }
+    if (b.dataset.f === 'actif') { const L = b.dataset.c ? T.commerciaux : T.terrain; const a = L[+(b.dataset.c || b.dataset.t)]; a.actif = !a.actif; render(); }
+    if (b.dataset.add) { T[b.dataset.add].unshift(b.dataset.add === 'commerciaux' ? { nom: 'Nouveau commercial', type: 'whatsapp', base: 0, actif: true } : { nom: 'Nouveau photographe', base: 60000, actif: true, poste: 'Photographe', repos: ['Vendredi'] }); render(); const i = $(`[data-${b.dataset.add === 'commerciaux' ? 'c' : 't'}="0"][data-f="nom"]`); i.focus(); i.select(); }
+    if (b.id === 'resetDemo') { if (!confirm('Réinitialiser toutes les données de démonstration ?')) return; Object.keys(localStorage).filter(k => k.startsWith('wk.')).forEach(k => localStorage.removeItem(k)); store.set('role', 'owner'); location.reload(); }
+  });
+  $('#save').onclick = () => { store.set('settings', S); store.set('team', T); audit('Paramètres', 'Règles de calcul mises à jour'); toast('Paramètres enregistrés · tous les calculs sont mis à jour'); render(); };
+
+  /* ───────── Import / export Excel (même structure que le modèle) ───────── */
+  // Doit rester identique aux en-têtes de tools/generate_import_template.py
+  const IMPORT_SCHEMA = {
+    'Rendez-vous': ['Date', 'Commune', 'Type de bien', 'Wilaya', 'Commercial', 'Équipe terrain', 'Revenu (DA)', 'Paiement', 'Remarque'],
+    'Clients': ['Nom complet', 'Téléphone', 'E-mail', 'Type de client', 'Bien', 'Commune', 'Wilaya', 'Budget / prix (DA)', 'Source', 'Commercial', 'Étape', 'Note'],
+    'Versements CCP': ['Date', 'Objet', 'Montant (DA)', 'Bénéficiaire'],
+    'Missions': ['Date', 'Photographe', 'Destination', 'Type', 'Repas (DA)', 'Frais (DA)', 'Hôtel (DA)'],
+  };
+  const LIST = {
+    types: ['Villa', 'Terrain', 'Appartement', 'Maison', 'Local commercial', 'Duplex', 'Carcasse', 'Immeuble', 'Ferme', 'Hangar', 'Autre'],
+    wilayas: ['Adrar', 'Chlef', 'Laghouat', 'Oum El Bouaghi', 'Batna', 'Béjaïa', 'Biskra', 'Béchar', 'Blida', 'Bouira', 'Tamanrasset', 'Tébessa', 'Tlemcen', 'Tiaret', 'Tizi Ouzou', 'Alger', 'Djelfa', 'Jijel', 'Sétif', 'Saïda', 'Skikda', 'Sidi Bel Abbès', 'Annaba', 'Guelma', 'Constantine', 'Médéa', 'Mostaganem', "M'Sila", 'Mascara', 'Ouargla', 'Oran', 'El Bayadh', 'Illizi', 'Bordj Bou Arreridj', 'Boumerdès', 'El Tarf', 'Tindouf', 'Tissemsilt', 'El Oued', 'Khenchela', 'Souk Ahras', 'Tipaza', 'Mila', 'Aïn Defla', 'Naâma', 'Aïn Témouchent', 'Ghardaïa', 'Relizane', 'Timimoun', 'Bordj Badji Mokhtar', 'Ouled Djellal', 'Béni Abbès', 'In Salah', 'In Guezzam', 'Touggourt', 'Djanet', "El M'Ghair", 'El Meniaa'],
+    paiement: ['Espèces', 'CCP', 'Virement'], clients: ['Acheteur', 'Vendeur', 'Locataire', 'Bailleur'],
+    sources: ['Facebook', 'Instagram', 'TikTok', 'WhatsApp', 'Bouche-à-oreille', 'Site web', 'Passage agence', 'Ouedkniss'],
+    etapes: ['Nouveau', 'Contacté', 'Visite programmée', 'Négociation', 'Gagné', 'Perdu'], mission: ['Journée', 'Nuitée'],
+  };
+  function loadXLSX() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    return new Promise((ok, ko) => { const sc = document.createElement('script'); sc.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'; sc.onload = () => ok(window.XLSX); sc.onerror = () => ko(new Error('Lecteur Excel indisponible (connexion internet requise).')); document.head.appendChild(sc); });
+  }
+  const norm = v => String(v ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
+  const pad = n => String(n).padStart(2, '0');
+
+  function validate(wb) {
+    const team = WK.team(), COM = team.commerciaux.map(a => a.nom), TER = team.terrain.map(a => a.nom);
+    const out = { structure: [], sheets: {} };
+    for (const [name, cols] of Object.entries(IMPORT_SCHEMA)) {
+      const res = { rows: 0, valid: [], errors: [] }; out.sheets[name] = res;
+      const ws = wb.Sheets[name];
+      if (!ws) { out.structure.push(`Onglet « ${name} » introuvable`); continue; }
+      const A = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
+      const head = (A[0] || []).slice(0, cols.length).map(h => String(h).replace(/\s*\*\s*$/, '').trim());
+      const bad = cols.filter((c, i) => head[i] !== c);
+      if (bad.length) { out.structure.push(`Onglet « ${name} » : colonnes différentes du modèle (attendu : ${bad.map(b => '« ' + b + ' »').join(', ')})`); continue; }
+      A.slice(1).forEach((row, i) => {
+        if (!row.some(v => String(v).trim() !== '')) return;
+        res.rows++;
+        const line = i + 2, errs = [], get = c => row[cols.indexOf(c)];
+        const err = (col, msg) => errs.push({ sheet: name, line, col, msg });
+        const req = c => { const v = get(c); if (String(v ?? '').trim() === '') { err(c, 'Obligatoire'); return null; } return v; };
+        const date = (c, required = true) => {
+          const v = required ? req(c) : get(c); if (v === null || v === '') return null;
+          let d = null;
+          if (v instanceof Date && !isNaN(v)) d = v;
+          else if (typeof v === 'number') d = new Date(Math.round((v - 25569) * 864e5));
+          else { const m = String(v).trim().match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/); if (m) { d = new Date(+m[3], +m[2] - 1, +m[1], 12); if (d.getDate() !== +m[1] || d.getMonth() !== +m[2] - 1) d = null; } }
+          if (!d || isNaN(d)) { err(c, `Date invalide « ${v} » (format JJ/MM/AAAA)`); return null; }
+          return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        };
+        const money = (c, required = false) => {
+          const v = required ? req(c) : get(c); if (v === null || String(v).trim() === '') return null;
+          if (typeof v === 'number') { if (!Number.isInteger(v)) { err(c, `${v} : pas de décimales en DA`); return null; } if (v < 0) { err(c, 'Montant négatif'); return null; } return v; }
+          const s = String(v).replace(/\s| | |DA/gi, '');
+          if (/[.,]\d/.test(s)) { err(c, `« ${v} » : pas de décimales en DA`); return null; }
+          if (!/^\d+$/.test(s)) { err(c, `« ${v} » n'est pas un montant`); return null; }
+          return +s;
+        };
+        const list = (c, L, required = true) => {
+          const v = required ? req(c) : get(c); if (v === null || String(v).trim() === '') return null;
+          const hit = L.find(x => norm(x) === norm(v)); if (!hit) { err(c, `« ${v} » n'est pas dans la liste`); return null; } return hit;
+        };
+        let rec = null;
+        if (name === 'Rendez-vous') rec = { date: date('Date'), commune: req('Commune'), type: list('Type de bien', LIST.types), wilaya: list('Wilaya', LIST.wilayas), agent: list('Commercial', COM), terrain: list('Équipe terrain', TER), revenu: money('Revenu (DA)') || 0, paiement: list('Paiement', LIST.paiement, false) || 'Espèces', remarque: String(get('Remarque') || '').trim() };
+        if (name === 'Clients') rec = { nom: req('Nom complet'), tel: req('Téléphone'), email: String(get('E-mail') || '').trim(), type: list('Type de client', LIST.clients), bien: list('Bien', LIST.types), commune: String(get('Commune') || '').trim() || '—', wilaya: list('Wilaya', LIST.wilayas, false) || 'Alger', budget: money('Budget / prix (DA)') || 0, source: list('Source', LIST.sources, false) || 'Passage agence', agent: list('Commercial', COM), statut: list('Étape', LIST.etapes, false) || 'Nouveau', note: String(get('Note') || '').trim() };
+        if (name === 'Versements CCP') rec = { date: date('Date'), detail: String(get('Objet') || '').trim(), montant: money('Montant (DA)', true), beneficiaire: String(get('Bénéficiaire') || '').trim() || 'Hakim' };
+        if (name === 'Missions') rec = { date: date('Date'), agent: list('Photographe', TER), destination: req('Destination'), type: list('Type', LIST.mission), repas: money('Repas (DA)'), frais: money('Frais (DA)'), hotel: money('Hôtel (DA)') };
+        if (errs.length) res.errors.push(...errs); else res.valid.push(rec);
+      });
+    }
+    return out;
+  }
+
+  function applyImport(r) {
+    const user = WK.currentUser().nom, s = WK.settings(); let n = 0;
+    const R = r.sheets['Rendez-vous'].valid;
+    if (R.length) { const base = Date.now() % 1e7; store.set('rdvs.added', [...R.map((x, i) => ({ id: base + i, ...x, commune: String(x.commune).trim(), lieu: `${String(x.commune).trim().toLowerCase()} ${x.type.toLowerCase()}`, statut: x.revenu ? 'Réalisé' : 'À encaisser', added: true, by: user + ' (import)' })), ...store.get('rdvs.added', [])]); n += R.length; }
+    const Cl = r.sheets['Clients'].valid;
+    if (Cl.length) { const all = WK.clients(); let id = Math.max(0, ...all.map(c => c.id)); const add = Cl.map(x => ({ id: ++id, nom: String(x.nom).trim(), tel: String(x.tel).trim(), email: x.email, type: x.type, source: x.source, wilaya: x.wilaya, commune: x.commune, bien: x.bien, budget: x.budget, surface: null, pieces: null, statut: x.statut, temperature: 'Tiède', agent: x.agent, created: WK.TODAY, relance: null, relanceNote: '', extras: [], rdvIds: [], notes: x.note ? [{ id: 'imp' + id, kind: 'note', date: WK.TODAY, author: user, text: x.note }] : [] })); WK.saveClients([...add, ...all]); n += Cl.length; }
+    const V = r.sheets['Versements CCP'].valid;
+    if (V.length) { store.set('ccp.added', [...V, ...store.get('ccp.added', [])]); n += V.length; }
+    const M = r.sheets['Missions'].valid;
+    if (M.length) { const list = store.get('missions', WK.SEED_MISSIONS).slice(); M.forEach((x, i) => { const nuit = x.type === 'Nuitée'; list.push({ id: 'imp' + Date.now() + i, date: x.date, agent: x.agent, destination: String(x.destination).trim(), type: nuit ? 'nuitee' : 'journee', repas: x.repas ?? s.repas, frais: x.frais ?? (nuit ? s.fraisNuitee : s.fraisJournee), hotel: x.hotel ?? (nuit ? s.hotel : 0), statut: 'À valider', source: 'Import' }); }); store.set('missions', list); n += M.length; }
+    audit('Import Excel', `${n} lignes importées (${R.length} RDV, ${Cl.length} clients, ${V.length} versements, ${M.length} missions)`);
+    return n;
+  }
+
+  function report(file, r) {
+    const S2 = Object.entries(r.sheets), totalValid = S2.reduce((a, [, x]) => a + x.valid.length, 0), errs = S2.flatMap(([, x]) => x.errors);
+    const p = WK.openPanel(`${WK.panelHead('Vérification du fichier', esc(file.name))}
+      <div class="flex-1 overflow-y-auto p-6">
+        ${r.structure.length ? `<div class="rounded-xl bg-red-50 ring-1 ring-red-200 p-4 text-sm text-red-800"><p class="font-semibold flex items-center gap-2">${icon('file-x', 'w-4 h-4')} Ce fichier ne correspond pas au modèle</p><ul class="mt-2 space-y-1 list-disc pl-5">${r.structure.map(x => `<li>${esc(x)}</li>`).join('')}</ul><a href="assets/modele-import-elwakil.xlsx" download class="btn btn-secondary mt-3">${icon('download')} Télécharger le modèle</a></div>` : ''}
+        <div class="${r.structure.length ? 'mt-5' : ''} grid grid-cols-2 gap-3">${S2.map(([n, x]) => `<div class="rounded-xl ring-1 ring-slate-200 p-3.5"><p class="text-xs font-medium text-slate-500">${n}</p><p class="mt-1 text-lg font-semibold tnum text-slate-900">${x.valid.length}<span class="text-sm font-normal text-slate-400"> / ${x.rows} ligne${x.rows > 1 ? 's' : ''}</span></p>${x.errors.length ? `<p class="text-xs text-red-600 mt-0.5">${new Set(x.errors.map(e => e.line)).size} ligne(s) en erreur</p>` : x.rows ? '<p class="text-xs text-emerald-700 mt-0.5">Tout est correct</p>' : '<p class="text-xs text-slate-400 mt-0.5">Onglet vide</p>'}</div>`).join('')}</div>
+        ${errs.length ? `<h4 class="mt-6 text-sm font-semibold text-slate-900">Erreurs à corriger <span class="font-normal text-slate-500">(${errs.length})</span></h4>
+        <p class="text-xs text-slate-500 mt-0.5">Ces lignes ne seront pas importées. Corrigez-les dans Excel puis réimportez le fichier.</p>
+        <div class="mt-3 rounded-xl ring-1 ring-slate-200 overflow-hidden"><table class="tbl m-stack"><thead><tr><th>Onglet</th><th class="num">Ligne</th><th>Colonne</th><th>Problème</th></tr></thead><tbody>
+          ${errs.slice(0, 60).map(e => `<tr><td class="whitespace-nowrap">${e.sheet}</td><td class="num">${e.line}</td><td class="whitespace-nowrap font-medium">${esc(e.col)}</td><td class="text-red-600">${esc(e.msg)}</td></tr>`).join('')}
+        </tbody></table></div>${errs.length > 60 ? `<p class="text-xs text-slate-500 mt-2">… et ${errs.length - 60} autres.</p>` : ''}` : (totalValid ? `<div class="mt-5 rounded-xl bg-emerald-50 ring-1 ring-emerald-200 p-4 text-sm text-emerald-800 flex gap-2">${icon('check-circle-2', 'w-4 h-4 shrink-0 mt-0.5')} Aucune erreur : toutes les lignes peuvent être importées.</div>` : '')}
+      </div>
+      <div class="px-6 py-4 border-t border-slate-100 flex flex-wrap justify-end gap-2"><button data-close class="btn btn-secondary">Annuler</button><button id="doImport" class="btn btn-primary" ${totalValid ? '' : 'disabled style="opacity:.5"'}>${icon('upload')} Importer ${totalValid} ligne${totalValid > 1 ? 's' : ''}</button></div>`);
+    $('#doImport', p).onclick = () => { if (!totalValid) return; const n = applyImport(r); WK.closePanel(); render(); toast(`${n} lignes importées · statistiques et paie recalculées`, 'file-check-2'); };
+  }
+
+  $('#form').addEventListener('change', async e => {
+    if (e.target.id !== 'impFile' || !e.target.files[0]) return;
+    const file = e.target.files[0]; e.target.value = '';
+    try {
+      const X = await loadXLSX();
+      const wb = X.read(await file.arrayBuffer(), { cellDates: true });
+      report(file, validate(wb));
+    } catch (er) { toast('Lecture impossible : ' + er.message, 'alert-triangle'); }
+  });
+  $('#form').addEventListener('click', async e => {
+    if (!e.target.closest('#exportAll')) return;
+    try {
+      const X = await loadXLSX(), wb = X.utils.book_new();
+      const fr = d => d.split('-').reverse().join('/');
+      const sheets = {
+        'Rendez-vous': WK.rdvs().map(r => [fr(r.date), r.commune, r.type, r.wilaya, r.agent || '', r.terrain || '', r.revenu || '', r.paiement, r.remarque || '']),
+        'Clients': WK.clients().map(c => [c.nom, c.tel, c.email, c.type, c.bien, c.commune, c.wilaya, c.budget, c.source, c.agent, c.statut, (c.notes[0] || {}).text || '']),
+        'Versements CCP': WK.ccp().map(v => [fr(v.date), v.detail, v.montant, v.beneficiaire]),
+        'Missions': WK.store.get('missions', WK.SEED_MISSIONS).map(m => [fr(m.date), m.agent, m.destination, m.type === 'nuitee' ? 'Nuitée' : 'Journée', m.repas, m.frais, m.hotel]),
+      };
+      for (const [n, rows] of Object.entries(sheets)) { const ws = X.utils.aoa_to_sheet([IMPORT_SCHEMA[n], ...rows]); ws['!cols'] = IMPORT_SCHEMA[n].map(h => ({ wch: Math.max(14, h.length + 4) })); X.utils.book_append_sheet(wb, ws, n); }
+      X.writeFile(wb, `elwakil-export-${WK.TODAY}.xlsx`);
+      audit('Export', 'Export complet au format du modèle'); toast('Export téléchargé (même format que le modèle)', 'download');
+    } catch (er) { toast('Export impossible : ' + er.message, 'alert-triangle'); }
+  });
+  render();
+});
+</script>
+</body>
+</html>

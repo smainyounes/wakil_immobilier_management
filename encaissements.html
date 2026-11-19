@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="icon" href="assets/logo.jpg"><link rel="apple-touch-icon" href="assets/logo.jpg">
+<title>Encaissements CCP · El Wakil Immobilier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script><script src="assets/tw.js"></script>
+<link rel="stylesheet" href="assets/app.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="assets/data.js"></script><script src="assets/app.js"></script>
+</head>
+<body>
+<div id="page">
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Encaissements CCP</h1>
+      <p class="text-sm text-slate-500 mt-1">Versements reçus sur le compte CCP, rapprochés automatiquement avec les rendez-vous.</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2">
+      <select id="month" class="field !w-auto font-medium"></select>
+      <button id="add" data-perm="encaissements.create" class="btn btn-primary hidden sm:inline-flex"><i data-lucide="plus"></i> Nouveau versement</button>
+    </div>
+  </div>
+
+  <div id="kpis" class="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
+
+  <div class="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-4">
+    <div class="card overflow-hidden xl:col-span-2">
+      <div class="px-5 pt-5 pb-3 flex items-center justify-between"><div><h3 class="font-semibold text-slate-900">Versements</h3><p class="text-sm text-slate-500" id="sub"></p></div>
+        <div class="seg" id="seg"><button data-v="all" class="on">Tous</button><button data-v="ok">Rapprochés</button><button data-v="ko">À rapprocher</button></div></div>
+      <div class="overflow-x-auto thin-scroll max-h-[560px]"><table class="tbl m-stack"><thead><tr><th>Date</th><th>Objet</th><th>Bénéficiaire</th><th>Rendez-vous lié</th><th class="num">Montant</th></tr></thead><tbody id="rows"></tbody></table></div>
+    </div>
+    <div class="card p-5">
+      <h3 class="font-semibold text-slate-900">Total versé par mois</h3><p class="text-sm text-slate-500">Juillet → novembre 2026</p>
+      <div class="chart-box h-[260px] mt-4"><canvas id="chart"></canvas></div>
+      <div class="mt-5 rounded-lg bg-slate-50 ring-1 ring-slate-200 p-3 text-xs text-slate-600 flex gap-2.5"><i data-lucide="link" class="w-4 h-4 text-slate-400 shrink-0"></i><span>Rapprochement : un versement est lié au rendez-vous dont le lieu correspond, à 5 jours près.</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+WK.mount({ id: 'encaissements', title: 'Encaissements CCP', section: 'Opérations', perm: 'encaissements.view', help: 'encaissements' }, () => {
+  const { $, fmt, ccp, rdvs, store, avatar, badge, icon, esc, toast, openPanel, closePanel, panelHead, audit, C, TODAY } = WK;
+  const norm = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const STOP = new Set(['villa', 'appart', 'terrain', 'maison', 'magasin', 'local', 'ferme', 'immeuble', 'carcase', 'duplex', 'el', 'de', 'la', 'le']);
+  let filter = 'all', chart;
+  const R = rdvs();
+  function match(v) {
+    const toks = norm(v.detail).split(/[^a-z0-9]+/).filter(t => t.length > 2 && !STOP.has(t));
+    if (!toks.length) return null;
+    const t0 = new Date(v.date).getTime();
+    return R.find(r => Math.abs(new Date(r.date).getTime() - t0) <= 5 * 864e5 && toks.some(t => norm(r.lieu).includes(t))) || null;
+  }
+  const all = () => ccp().map(v => ({ ...v, rdv: match(v) })).sort((a, b) => b.date.localeCompare(a.date));
+  const ms = [...new Set(ccp().map(v => v.date.slice(0, 7)))].sort();
+  $('#month').innerHTML = `<option value="">Tous les mois</option>` + ms.slice().reverse().map(m => `<option value="${m}" ${m === '2026-11' ? 'selected' : ''}>${fmt.month(m)}</option>`).join('');
+
+  function render() {
+    const m = $('#month').value, A = all(), L = A.filter(v => !m || v.date.startsWith(m));
+    const tot = L.reduce((a, v) => a + v.montant, 0), ok = L.filter(v => v.rdv).length;
+    const k = (l, v, ic, s = '') => `<div class="card px-5 py-4"><div class="flex items-center gap-2 text-xs font-medium text-slate-500">${icon(ic, 'w-4 h-4')}${l}</div><p class="mt-2 text-xl font-semibold tnum text-slate-900">${v}</p><p class="text-xs text-slate-400 mt-0.5">${s}</p></div>`;
+    $('#kpis').innerHTML = [
+      k('Total encaissé', fmt.money(tot), 'wallet', m ? fmt.month(m) : 'depuis juillet'),
+      k('Versements', L.length, 'receipt', 'opérations'),
+      k('Montant moyen', fmt.money(L.length ? tot / L.length : 0), 'divide', 'par versement'),
+      k('Taux de rapprochement', L.length ? Math.round(ok / L.length * 100) + ' %' : '—', 'link', `${L.length - ok} à vérifier`),
+    ].join('');
+    const V = L.filter(v => filter === 'all' || (filter === 'ok' ? v.rdv : !v.rdv));
+    $('#sub').textContent = `${V.length} versements · ${fmt.da(V.reduce((a, v) => a + v.montant, 0))}`;
+    $('#rows').innerHTML = V.map(v => `<tr>
+      <td class="whitespace-nowrap"><p class="font-medium text-slate-800">${fmt.date(v.date)}</p><p class="text-xs text-slate-500">${fmt.weekday(v.date)}</p></td>
+      <td class="font-medium text-slate-800">${esc(v.detail || 'Versement')}</td>
+      <td><div class="flex items-center gap-2 whitespace-nowrap">${avatar(v.beneficiaire)}${esc(v.beneficiaire)}</div></td>
+      <td>${v.rdv ? `<a href="rdv.html?q=${encodeURIComponent(v.rdv.commune)}" class="inline-flex items-center gap-1.5 text-sm text-brand-800 hover:underline">${icon('link-2', 'w-3.5 h-3.5')} ${esc(v.rdv.commune)} · ${fmt.dateShort(v.rdv.date)}</a>` : badge('À rapprocher', 'amber', 'unlink')}</td>
+      <td class="num font-semibold text-slate-900 whitespace-nowrap">${fmt.da(v.montant)}</td></tr>`).join('') || `<tr><td colspan="5" class="text-center py-10 text-slate-500">Aucun versement</td></tr>`;
+
+    const byM = ms.map(x => A.filter(v => v.date.startsWith(x)).reduce((a, v) => a + v.montant, 0));
+    chart && chart.destroy();
+    chart = new Chart($('#chart'), { type: 'bar', data: { labels: ms.map(fmt.monthShort), datasets: [{ data: byM, backgroundColor: ms.map(x => !m || x === m ? C.hi : C.soft), maxBarThickness: 36 }] },
+      options: { scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => fmt.n(v), maxTicksLimit: 5 } } }, plugins: { tooltip: { callbacks: { label: i => ' ' + fmt.da(i.raw) } } } } });
+    WK.refreshIcons();
+  }
+  WK.seg($('#seg'), v => { filter = v; render(); });
+  $('#month').onchange = render;
+  $('#add') && ($('#add').onclick = () => {
+    const p = openPanel(`${panelHead('Nouveau versement CCP')}
+      <form id="f" class="flex-1 overflow-y-auto p-6 space-y-5">
+        <div class="grid grid-cols-2 gap-4"><div><label class="label">Date</label><input type="date" name="date" value="${TODAY}" class="field"></div><div><label class="label">Montant</label><div class="relative"><input type="number" name="montant" step="1000" class="field pr-12 tnum" placeholder="5000"><span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">DA</span></div></div></div>
+        <div><label class="label">Objet / bien concerné</label><input name="detail" class="field" placeholder="Ex. Bologhine villa"></div>
+        <div><label class="label">Compte bénéficiaire</label><select name="beneficiaire" class="field"><option>Hakim</option></select></div>
+        <div><label class="label">Justificatif (reçu CCP)</label><label class="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 py-8 text-sm text-slate-500 hover:border-brand-300 hover:bg-brand-50/30 cursor-pointer">${icon('upload-cloud', 'w-6 h-6 text-slate-400')}<span><b class="text-brand-700">Ajouter une photo</b> ou glisser le fichier</span><input type="file" class="hidden"></label></div>
+      </form>
+      <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2"><button data-close class="btn btn-secondary">Annuler</button><button id="save" class="btn btn-primary">${icon('check')} Enregistrer</button></div>`);
+    $('#save', p).onclick = () => { const d = Object.fromEntries(new FormData($('#f', p))); if (!+d.montant) { $('#f', p).montant.classList.add('!border-red-400'); return; }
+      store.set('ccp.added', [{ date: d.date, detail: d.detail, montant: +d.montant, beneficiaire: d.beneficiaire }, ...store.get('ccp.added', [])]);
+      audit('Versement', `${fmt.da(+d.montant)} — ${d.detail}`); closePanel(); $('#month').value = d.date.slice(0, 7); render(); toast('Versement enregistré'); };
+  });
+  render();
+  if (new URLSearchParams(location.search).get('new') && $('#add')) $('#add').click();
+});
+</script>
+</body>
+</html>

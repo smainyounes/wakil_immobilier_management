@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#111827"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="icon" href="assets/logo.jpg"><link rel="apple-touch-icon" href="assets/logo.jpg">
+<title>Rentabilité · El Wakil Immobilier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script><script src="assets/tw.js"></script>
+<link rel="stylesheet" href="assets/app.css">
+<script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="assets/data.js"></script><script src="assets/app.js"></script>
+</head>
+<body>
+<div id="page">
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Rentabilité</h1>
+      <p class="text-sm text-slate-500 mt-1">Compte de résultat mensuel de l'agence.</p>
+    </div>
+    <div class="seg" id="ex"><button data-v="prev" class="on">Exercice juil. 2025 – juin 2026</button><button data-v="cur">Juil. – nov. 2026 (estimé)</button></div>
+  </div>
+
+  <div id="kpis" class="mt-6 grid grid-cols-2 xl:grid-cols-4 gap-4"></div>
+
+  <div class="mt-6 grid grid-cols-1 xl:grid-cols-3 gap-4">
+    <div class="card p-5 xl:col-span-2">
+      <div class="flex items-start justify-between"><div><h3 class="font-semibold text-slate-900">Chiffre d'affaires et dépenses</h3><p class="text-sm text-slate-500" id="cSub"></p></div>
+        <div class="flex items-center gap-4 text-xs text-slate-600"><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-[#28589e]"></span>Chiffre d'affaires</span><span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-[#b97f00]"></span>Dépenses</span></div></div>
+      <div class="chart-box h-[300px] mt-4"><canvas id="ca"></canvas></div>
+    </div>
+    <div class="card p-5">
+      <h3 class="font-semibold text-slate-900">Marge nette</h3><p class="text-sm text-slate-500">Bénéfice ÷ chiffre d'affaires</p>
+      <div class="chart-box h-[300px] mt-4"><canvas id="mg"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card mt-6 overflow-hidden">
+    <div class="px-5 pt-5 pb-3 flex items-center justify-between"><div><h3 class="font-semibold text-slate-900">Détail mensuel</h3><p class="text-sm text-slate-500" id="tSub"></p></div><button id="export" class="btn btn-secondary"><i data-lucide="download"></i> Exporter</button></div>
+    <div class="overflow-x-auto thin-scroll"><table class="tbl m-stack"><thead id="th"></thead><tbody id="rows"></tbody><tfoot id="foot"></tfoot></table></div>
+  </div>
+</div>
+
+<script>
+WK.mount({ id: 'rentabilite', title: 'Rentabilité', section: 'Finance', perm: 'rentabilite.view', help: 'rentabilite' }, () => {
+  const { $, D, fmt, sum, icon, badge, C, agentStats, fieldStats, byMonth, rdvs, exportCSV } = WK;
+  let mode = 'prev', c1, c2;
+  const AB = { Juillet: ['Juillet', 'juil.'], Aout: ['Août', 'août'], Septembre: ['Septembre', 'sept.'], Octobre: ['Octobre', 'oct.'], Novembre: ['Novembre', 'nov.'], Decembre: ['Décembre', 'déc.'], Janvier: ['Janvier', 'janv.'], 'Février': ['Février', 'févr.'], Mars: ['Mars', 'mars'], Avril: ['Avril', 'avr.'], Mai: ['Mai', 'mai'], Juin: ['Juin', 'juin'] };
+  const prev = D.pnl.map((p, i) => { const y = i < 6 ? '2025' : '2026', a = AB[p.mois] || [p.mois, p.mois]; return { label: a[0] + ' ' + y, short: a[1] + ' ' + y.slice(2), ca: p.ca, dep: p.depenses, ben: p.benefice }; });
+  const cur = ['2026-07', '2026-08', '2026-09', '2026-10', '2026-11'].map(m => {
+    const A = agentStats(m), F = fieldStats(m);
+    const ca = sum(byMonth(rdvs(), m), 'revenu');
+    const parts = { charges: sum(A, 'charges'), salCom: sum(A, 'salaire'), spons: sum(A, 'spons'), salTer: sum(F, 'net') };
+    const dep = parts.charges + parts.salCom + parts.spons;
+    return { label: fmt.month(m), short: fmt.monthShort(m), ca, dep, ben: ca - dep, parts };
+  });
+
+  function render() {
+    const L = mode === 'prev' ? prev : cur;
+    const ca = sum(L, 'ca'), dep = sum(L, 'dep'), ben = sum(L, 'ben');
+    const best = L.reduce((a, x) => x.ben > a.ben ? x : a);
+    const k = (l, v, sub, ic, cls = '') => `<div class="card px-5 py-4"><div class="flex items-center gap-2 text-xs font-medium text-slate-500">${icon(ic, 'w-4 h-4')}${l}</div><p class="mt-2 text-xl font-semibold tnum ${cls || 'text-slate-900'}">${v}</p><p class="text-xs text-slate-400 mt-0.5">${sub}</p></div>`;
+    $('#kpis').innerHTML = [
+      k('Chiffre d\'affaires', fmt.money(ca), `${L.length} mois · moyenne ${fmt.da(ca / L.length)}`, 'banknote'),
+      k('Dépenses', fmt.money(dep), mode === 'prev' ? 'saisies dans le fichier' : 'charges RDV + salaires com. + sponsoring', 'receipt'),
+      k('Bénéfice', fmt.money(ben), mode === 'prev' ? 'résultat de l\'exercice' : 'avant salaires de l\'équipe terrain', 'piggy-bank', ben < 0 ? 'text-red-600' : 'text-emerald-700'),
+      k('Marge moyenne', fmt.pct(ben / ca), `meilleur mois : ${best.label.toLowerCase()}`, 'percent'),
+    ].join('');
+    $('#cSub').textContent = mode === 'prev' ? 'Données de l\'onglet annuel « 2026 DATTA »' : 'Calculé automatiquement depuis les rendez-vous et les règles';
+    $('#tSub').textContent = mode === 'prev' ? 'Exercice juillet 2025 – juin 2026' : 'Estimation automatique, mise à jour à chaque saisie';
+    c1 && c1.destroy(); c2 && c2.destroy();
+    c1 = new Chart($('#ca'), { type: 'bar', data: { labels: L.map(x => x.short), datasets: [
+      { label: 'Chiffre d\'affaires', data: L.map(x => x.ca), backgroundColor: C.s1, maxBarThickness: 18 },
+      { label: 'Dépenses', data: L.map(x => x.dep), backgroundColor: C.s2, maxBarThickness: 18 }] },
+      options: { scales: { x: { grid: { display: false } }, y: { ticks: { callback: v => fmt.n(v), maxTicksLimit: 5 } } },
+        plugins: { tooltip: { callbacks: { title: i => L[i[0].dataIndex].label, label: i => ` ${i.dataset.label} : ${fmt.da(i.raw)}`, footer: i => 'Bénéfice : ' + fmt.signed(L[i[0].dataIndex].ben) } } } } });
+    c2 = new Chart($('#mg'), { type: 'line', data: { labels: L.map(x => x.short), datasets: [{ data: L.map(x => x.ben / x.ca * 100), borderColor: C.hi, backgroundColor: 'rgba(185,127,0,.10)', fill: true, tension: .3, pointRadius: 3, pointBackgroundColor: C.hi, pointBorderColor: '#fff', pointBorderWidth: 2 }] },
+      options: { scales: { x: { grid: { display: false }, ticks: { maxTicksLimit: 6 } }, y: { ticks: { callback: v => v + ' %', maxTicksLimit: 5 } } }, plugins: { tooltip: { callbacks: { title: i => L[i[0].dataIndex].label, label: i => ' Marge : ' + i.raw.toFixed(1).replace('.', ',') + ' %' } } } } });
+
+    const maxCa = Math.max(...L.map(x => x.ca));
+    $('#th').innerHTML = `<tr><th>Mois</th><th class="num">Chiffre d'affaires</th><th class="num">Dépenses</th>${mode === 'cur' ? '<th class="num">dont salaires com.</th><th class="num">dont sponsoring</th>' : ''}<th class="num">Bénéfice</th><th class="w-48">Marge</th></tr>`;
+    $('#rows').innerHTML = L.map(x => { const mg = x.ben / x.ca; return `<tr><td class="font-medium text-slate-800">${x.label}</td><td class="num">${fmt.n(x.ca)}</td><td class="num text-slate-600">${fmt.n(x.dep)}</td>
+      ${mode === 'cur' ? `<td class="num text-slate-500">${fmt.n(x.parts.salCom)}</td><td class="num text-slate-500">${fmt.n(x.parts.spons) || '—'}</td>` : ''}
+      <td class="num font-semibold ${x.ben < 0 ? 'text-red-600' : 'text-emerald-700'}">${fmt.signed(x.ben)}</td>
+      <td><div class="flex items-center gap-2 whitespace-nowrap"><div class="flex-1 h-1.5 rounded-full bg-slate-100"><div class="h-full rounded-full bg-brand-500" style="width:${Math.max(0, mg * 100)}%"></div></div><span class="text-xs tnum text-slate-600 w-10 text-right">${fmt.pct(mg)}</span></div></td></tr>`; }).join('');
+    $('#foot').innerHTML = `<tr class="bg-slate-50 font-semibold"><td class="px-4 py-3">Total</td><td class="num px-4">${fmt.n(ca)}</td><td class="num px-4">${fmt.n(dep)}</td>${mode === 'cur' ? `<td class="num px-4">${fmt.n(sum(L.map(x => x.parts), 'salCom'))}</td><td class="num px-4">${fmt.n(sum(L.map(x => x.parts), 'spons'))}</td>` : ''}<td class="num px-4 ${ben < 0 ? 'text-red-600' : 'text-emerald-700'}">${fmt.signed(ben)}</td><td class="px-4 text-xs tnum">${fmt.pct(ben / ca)}</td></tr>`;
+    WK.refreshIcons();
+  }
+  WK.seg($('#ex'), v => { mode = v; render(); });
+  $('#export').onclick = () => { const L = mode === 'prev' ? prev : cur; exportCSV('compte-de-resultat.csv', [['Mois', 'CA', 'Dépenses', 'Bénéfice'], ...L.map(x => [x.label, x.ca, x.dep, x.ben])]); };
+  render();
+});
+</script>
+</body>
+</html>
